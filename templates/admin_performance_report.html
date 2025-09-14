@@ -1,0 +1,668 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Report - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i class="fas fa-chart-line"></i> Student Performance Report</h1>
+            <p>Comprehensive analysis of student academic performance</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('admin_analytics') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Analytics
+            </a>
+            <button onclick="window.print()" class="btn btn-outline">
+                <i class="fas fa-print"></i>
+                Print Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Report Summary -->
+    <div class="report-summary">
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>{{ performance_data|length }}</h3>
+                    <p>Total Students</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>{{ "%.1f"|format(performance_data|sum(attribute='average_percentage') / performance_data|length if performance_data else 0) }}%</h3>
+                    <p>Class Average</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-file-upload"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>{{ performance_data|sum(attribute='submissions_count') }}</h3>
+                    <p>Total Submissions</p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>{{ performance_data|sum(attribute='late_submissions') }}</h3>
+                    <p>Late Submissions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Rankings -->
+    <div class="report-section">
+        <div class="section-header">
+            <h2><i class="fas fa-ranking-star"></i> Student Performance Rankings</h2>
+            <span class="report-date">Generated on {{ current_time.strftime('%B %d, %Y at %I:%M %p') }}</span>
+        </div>
+
+        {% if performance_data %}
+        <div class="performance-list">
+            {% for student in performance_data %}
+            <div class="performance-item">
+                <div class="rank-badge">
+                    <span class="rank-number">#{{ loop.index }}</span>
+                </div>
+                
+                <div class="student-info">
+                    <div class="student-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="student-details">
+                        <h3>{{ student.student_name }}</h3>
+                        <p class="username">@{{ student.username }}</p>
+                    </div>
+                </div>
+                
+                <div class="performance-metrics">
+                    <div class="metric">
+                        <span class="metric-value {{ 'excellent' if student.average_percentage >= 90 else 'good' if student.average_percentage >= 80 else 'average' if student.average_percentage >= 70 else 'needs-improvement' }}">
+                            {{ student.average_percentage }}%
+                        </span>
+                        <span class="metric-label">Average Grade</span>
+                    </div>
+                    
+                    <div class="metric">
+                        <span class="metric-value">{{ student.submissions_count }}</span>
+                        <span class="metric-label">Submissions</span>
+                    </div>
+                    
+                    <div class="metric">
+                        <span class="metric-value">{{ student.grades_count }}</span>
+                        <span class="metric-label">Graded</span>
+                    </div>
+                    
+                    <div class="metric">
+                        <span class="metric-value {{ 'good' if student.late_submissions == 0 else 'warning' if student.late_submissions <= 2 else 'poor' }}">
+                            {{ student.late_submissions }}
+                        </span>
+                        <span class="metric-label">Late</span>
+                    </div>
+                    
+                    <div class="metric">
+                        <span class="metric-value {{ 'good' if student.high_plagiarism == 0 else 'warning' if student.high_plagiarism <= 1 else 'poor' }}">
+                            {{ student.high_plagiarism }}
+                        </span>
+                        <span class="metric-label">Plagiarism</span>
+                    </div>
+                </div>
+                
+                <div class="performance-badge">
+                    {% if student.average_percentage >= 90 %}
+                        <span class="badge excellent">Excellent</span>
+                    {% elif student.average_percentage >= 80 %}
+                        <span class="badge good">Good</span>
+                    {% elif student.average_percentage >= 70 %}
+                        <span class="badge average">Average</span>
+                    {% elif student.average_percentage >= 60 %}
+                        <span class="badge below-average">Below Average</span>
+                    {% else %}
+                        <span class="badge needs-improvement">Needs Improvement</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h3>No student data found</h3>
+            <p>There are no students with submissions to generate a performance report.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Performance Statistics -->
+    <div class="report-section">
+        <div class="section-header">
+            <h2><i class="fas fa-chart-bar"></i> Performance Statistics</h2>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-section">
+                <h3>Grade Distribution</h3>
+                <div class="grade-distribution">
+                    {% set excellent_count = performance_data|selectattr('average_percentage', 'ge', 90)|list|length %}
+                    {% set good_count = performance_data|selectattr('average_percentage', 'ge', 80)|selectattr('average_percentage', 'lt', 90)|list|length %}
+                    {% set average_count = performance_data|selectattr('average_percentage', 'ge', 70)|selectattr('average_percentage', 'lt', 80)|list|length %}
+                    {% set below_average_count = performance_data|selectattr('average_percentage', 'ge', 60)|selectattr('average_percentage', 'lt', 70)|list|length %}
+                    {% set needs_improvement_count = performance_data|selectattr('average_percentage', 'lt', 60)|list|length %}
+                    
+                    <div class="grade-bar">
+                        <span class="grade-label">Excellent (90%+)</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill excellent" style="width: {{ (excellent_count / performance_data|length * 100) if performance_data else 0 }}%"></div>
+                        </div>
+                        <span class="grade-count">{{ excellent_count }}</span>
+                    </div>
+                    
+                    <div class="grade-bar">
+                        <span class="grade-label">Good (80-89%)</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill good" style="width: {{ (good_count / performance_data|length * 100) if performance_data else 0 }}%"></div>
+                        </div>
+                        <span class="grade-count">{{ good_count }}</span>
+                    </div>
+                    
+                    <div class="grade-bar">
+                        <span class="grade-label">Average (70-79%)</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill average" style="width: {{ (average_count / performance_data|length * 100) if performance_data else 0 }}%"></div>
+                        </div>
+                        <span class="grade-count">{{ average_count }}</span>
+                    </div>
+                    
+                    <div class="grade-bar">
+                        <span class="grade-label">Below Average (60-69%)</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill below-average" style="width: {{ (below_average_count / performance_data|length * 100) if performance_data else 0 }}%"></div>
+                        </div>
+                        <span class="grade-count">{{ below_average_count }}</span>
+                    </div>
+                    
+                    <div class="grade-bar">
+                        <span class="grade-label">Needs Improvement (&lt;60%)</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill needs-improvement" style="width: {{ (needs_improvement_count / performance_data|length * 100) if performance_data else 0 }}%"></div>
+                        </div>
+                        <span class="grade-count">{{ needs_improvement_count }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-section">
+                <h3>Key Insights</h3>
+                <div class="insights-list">
+                    {% if performance_data %}
+                    {% set top_performer = performance_data[0] if performance_data else none %}
+                    <div class="insight-item">
+                        <i class="fas fa-trophy"></i>
+                        <div>
+                            <strong>Top Performer:</strong> {{ top_performer.student_name }} ({{ top_performer.average_percentage }}%)
+                        </div>
+                    </div>
+                    
+                    {% set total_late = performance_data|sum(attribute='late_submissions') %}
+                    <div class="insight-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <strong>Late Submissions:</strong> {{ total_late }} total ({{ "%.1f"|format((total_late / performance_data|sum(attribute='submissions_count') * 100) if performance_data|sum(attribute='submissions_count') > 0 else 0) }}%)
+                        </div>
+                    </div>
+                    
+                    {% set total_plagiarism = performance_data|sum(attribute='high_plagiarism') %}
+                    <div class="insight-item">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <strong>High Plagiarism:</strong> {{ total_plagiarism }} submissions flagged
+                        </div>
+                    </div>
+                    
+                    {% set completion_rate = (performance_data|sum(attribute='grades_count') / performance_data|sum(attribute='submissions_count') * 100) if performance_data|sum(attribute='submissions_count') > 0 else 0 %}
+                    <div class="insight-item">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <strong>Grading Rate:</strong> {{ "%.1f"|format(completion_rate) }}% of submissions graded
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="insight-item">
+                        <i class="fas fa-info-circle"></i>
+                        <div>No performance data available</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.header-content h1 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-900);
+}
+
+.header-content p {
+    margin: 0;
+    color: var(--gray-600);
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.report-summary {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.summary-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+.summary-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.25rem;
+    margin: 0 auto 1rem auto;
+}
+
+.summary-content h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-900);
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.summary-content p {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.report-section {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.section-header {
+    background: var(--gray-50);
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-header h2 {
+    margin: 0;
+    color: var(--gray-900);
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.report-date {
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+
+.performance-list {
+    padding: 1.5rem;
+}
+
+.performance-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    transition: var(--transition);
+}
+
+.performance-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.rank-badge {
+    min-width: 50px;
+    text-align: center;
+}
+
+.rank-number {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    background: var(--primary-color);
+    color: var(--white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.125rem;
+}
+
+.student-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.student-avatar {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--gray-400), var(--gray-600));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.25rem;
+}
+
+.student-details h3 {
+    margin: 0 0 0.25rem 0;
+    color: var(--gray-900);
+    font-size: 1.125rem;
+}
+
+.student-details .username {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.performance-metrics {
+    display: flex;
+    gap: 2rem;
+}
+
+.metric {
+    text-align: center;
+    min-width: 60px;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.metric-value.excellent {
+    color: #10b981;
+}
+
+.metric-value.good {
+    color: #3b82f6;
+}
+
+.metric-value.average {
+    color: #f59e0b;
+}
+
+.metric-value.needs-improvement {
+    color: #ef4444;
+}
+
+.metric-value.warning {
+    color: var(--warning-color);
+}
+
+.metric-value.poor {
+    color: var(--error-color);
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.performance-badge {
+    min-width: 120px;
+    text-align: center;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge.excellent {
+    background: #10b981;
+    color: var(--white);
+}
+
+.badge.good {
+    background: #3b82f6;
+    color: var(--white);
+}
+
+.badge.average {
+    background: #f59e0b;
+    color: var(--white);
+}
+
+.badge.below-average {
+    background: #f97316;
+    color: var(--white);
+}
+
+.badge.needs-improvement {
+    background: #ef4444;
+    color: var(--white);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    padding: 1.5rem;
+}
+
+.stat-section h3 {
+    margin: 0 0 1rem 0;
+    color: var(--gray-900);
+    font-size: 1.125rem;
+}
+
+.grade-distribution {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.grade-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.grade-label {
+    min-width: 150px;
+    font-size: 0.875rem;
+    color: var(--gray-700);
+}
+
+.progress-bar {
+    flex: 1;
+    height: 20px;
+    background: var(--gray-200);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.progress-fill.excellent {
+    background: #10b981;
+}
+
+.progress-fill.good {
+    background: #3b82f6;
+}
+
+.progress-fill.average {
+    background: #f59e0b;
+}
+
+.progress-fill.below-average {
+    background: #f97316;
+}
+
+.progress-fill.needs-improvement {
+    background: #ef4444;
+}
+
+.grade-count {
+    min-width: 30px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.insights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.insight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+}
+
+.insight-item i {
+    color: var(--primary-color);
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--gray-500);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--gray-400);
+}
+
+.empty-state h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-600);
+}
+
+.empty-state p {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .performance-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .performance-metrics {
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media print {
+    .header-actions {
+        display: none;
+    }
+    
+    .performance-item {
+        break-inside: avoid;
+    }
+}
+</style>
+{% endblock %}

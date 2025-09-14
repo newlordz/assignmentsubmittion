@@ -1188,7 +1188,9 @@ def admin_performance_report():
         # Sort by average percentage
         performance_data.sort(key=lambda x: x['average_percentage'], reverse=True)
         
-        return render_template('admin_performance_report.html', performance_data=performance_data)
+        return render_template('admin_performance_report.html', 
+                                     performance_data=performance_data,
+                                     current_time=datetime.utcnow())
         
     except Exception as e:
         flash(f'Report generation failed: {str(e)}', 'error')
@@ -1226,7 +1228,9 @@ def admin_assignment_report():
                 'plagiarism_rate': round(plagiarism_rate, 1)
             })
         
-        return render_template('admin_assignment_report.html', assignment_data=assignment_data)
+        return render_template('admin_assignment_report.html', 
+                                     assignment_data=assignment_data,
+                                     current_time=datetime.utcnow())
         
     except Exception as e:
         flash(f'Report generation failed: {str(e)}', 'error')
