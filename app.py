@@ -505,15 +505,26 @@ def submit_assignment(assignment_id):
             file_content = read_file_content(file_path)
             
             # Create submission record
-            submission = Submission(
-                assignment_id=assignment_id,
-                student_id=current_user.id,
-                file_path=file_path,
-                file_name=file.filename,
-                file_size=os.path.getsize(file_path),
-                is_late=is_late,
-                content=file_content if len(file_content) < 10000 else file_content[:10000]  # Limit content size
-            )
+            try:
+                submission = Submission(
+                    assignment_id=assignment_id,
+                    student_id=current_user.id,
+                    file_path=file_path,
+                    file_name=file.filename,
+                    file_size=os.path.getsize(file_path),
+                    is_late=is_late,
+                    content=file_content if len(file_content) < 10000 else file_content[:10000]  # Limit content size
+                )
+            except TypeError:
+                # Fallback if content column doesn't exist
+                submission = Submission(
+                    assignment_id=assignment_id,
+                    student_id=current_user.id,
+                    file_path=file_path,
+                    file_name=file.filename,
+                    file_size=os.path.getsize(file_path),
+                    is_late=is_late
+                )
             
             db.session.add(submission)
             db.session.commit()
@@ -654,8 +665,12 @@ def plagiarism_check(submission_id):
     try:
         submission = Submission.query.get_or_404(submission_id)
         
-        # Use stored content or read from file
-        content = submission.content or read_file_content(submission.file_path)
+        # Use stored content or read from file (with fallback for missing column)
+        try:
+            content = submission.content or read_file_content(submission.file_path)
+        except AttributeError:
+            # Fallback if content column doesn't exist
+            content = read_file_content(submission.file_path)
         
         # Check if content is readable for plagiarism detection
         if not content or "Binary file detected" in content or "Archive file detected" in content or "Unable to read" in content:
@@ -679,7 +694,12 @@ def plagiarism_check(submission_id):
         # Use stored content from other submissions
         other_contents = []
         for other_sub in other_submissions:
-            other_content = other_sub.content or read_file_content(other_sub.file_path)
+            try:
+                other_content = other_sub.content or read_file_content(other_sub.file_path)
+            except AttributeError:
+                # Fallback if content column doesn't exist
+                other_content = read_file_content(other_sub.file_path)
+            
             if other_content and not any(msg in other_content for msg in ["Binary file detected", "Archive file detected", "Unable to read"]):
                 other_contents.append(other_content)
         
