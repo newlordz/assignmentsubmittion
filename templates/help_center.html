@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Help Center - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1><i class="fas fa-question-circle"></i> Help Center</h1>
+            <p>Find answers to common questions and get support</p>
+        </div>
+    </div>
+    
+    <div class="dashboard-grid">
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-search"></i> Search Help</h2>
+            </div>
+            <div class="assignments-list">
+                <div class="form-group">
+                    <input type="text" class="form-input" placeholder="Search for help topics...">
+                </div>
+                <button class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-book"></i> Frequently Asked Questions</h2>
+            </div>
+            <div class="assignments-list">
+                <div class="faq-item">
+                    <h4>How do I submit an assignment?</h4>
+                    <p>Go to your dashboard, find the assignment you want to submit, click "Submit Assignment", upload your file, and click submit.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h4>What file types are accepted?</h4>
+                    <p>We accept PDF, DOC, DOCX, TXT, PPT, PPTX, ZIP, and RAR files. Maximum file size is 16MB.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h4>How do I check my grades?</h4>
+                    <p>Your grades will appear in your dashboard once your lecturer has graded your submission. You'll also receive a notification.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h4>What if I submit late?</h4>
+                    <p>Late submissions are marked as such, but you can still submit. Check with your lecturer about late submission policies.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h4>How does plagiarism detection work?</h4>
+                    <p>Our system compares your submission with other submissions and online sources to detect potential plagiarism.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-video"></i> Video Tutorials</h2>
+            </div>
+            <div class="assignments-list">
+                <div class="tutorial-item">
+                    <div class="tutorial-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="tutorial-content">
+                        <h4>Getting Started</h4>
+                        <p>Learn how to navigate the platform and submit your first assignment.</p>
+                        <button class="btn btn-outline btn-sm" onclick="alert('Video tutorial would open here')">
+                            Watch Now
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tutorial-item">
+                    <div class="tutorial-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="tutorial-content">
+                        <h4>Understanding Grades</h4>
+                        <p>Learn how to interpret your grades and feedback from lecturers.</p>
+                        <button class="btn btn-outline btn-sm" onclick="alert('Video tutorial would open here')">
+                            Watch Now
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tutorial-item">
+                    <div class="tutorial-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="tutorial-content">
+                        <h4>Mobile Access</h4>
+                        <p>Learn how to access the platform on your mobile device.</p>
+                        <button class="btn btn-outline btn-sm" onclick="alert('Video tutorial would open here')">
+                            Watch Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-headset"></i> Contact Support</h2>
+            </div>
+            <div class="assignments-list">
+                <div class="contact-methods">
+                    <div class="contact-method">
+                        <i class="fas fa-envelope"></i>
+                        <h4>Email Support</h4>
+                        <p>support@assignment-system.edu</p>
+                        <button class="btn btn-outline btn-sm" onclick="window.location.href='mailto:support@assignment-system.edu'">
+                            Send Email
+                        </button>
+                    </div>
+                    
+                    <div class="contact-method">
+                        <i class="fas fa-phone"></i>
+                        <h4>Phone Support</h4>
+                        <p>+1 (555) 123-4567</p>
+                        <button class="btn btn-outline btn-sm" onclick="alert('Phone support: +1 (555) 123-4567')">
+                            Call Now
+                        </button>
+                    </div>
+                    
+                    <div class="contact-method">
+                        <i class="fas fa-comments"></i>
+                        <h4>Live Chat</h4>
+                        <p>Available 9 AM - 5 PM EST</p>
+                        <button class="btn btn-outline btn-sm" onclick="alert('Live chat would open here')">
+                            Start Chat
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.faq-item {
+    padding: 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+}
+
+.faq-item h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-900);
+    font-size: 1.125rem;
+}
+
+.faq-item p {
+    margin: 0;
+    color: var(--gray-600);
+    line-height: 1.6;
+}
+
+.tutorial-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+}
+
+.tutorial-icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.tutorial-content h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-900);
+    font-size: 1.125rem;
+}
+
+.tutorial-content p {
+    margin: 0 0 1rem 0;
+    color: var(--gray-600);
+    line-height: 1.6;
+}
+
+.contact-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.contact-method {
+    text-align: center;
+    padding: 1.5rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+}
+
+.contact-method i {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.contact-method h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-900);
+    font-size: 1.125rem;
+}
+
+.contact-method p {
+    margin: 0 0 1rem 0;
+    color: var(--gray-600);
+}
+</style>
+{% endblock %}

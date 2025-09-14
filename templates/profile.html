@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1><i class="fas fa-user"></i> My Profile</h1>
+            <p>Manage your personal information</p>
+        </div>
+    </div>
+    
+    <div class="dashboard-grid">
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-user-edit"></i> Profile Information</h2>
+            </div>
+            <div class="assignments-list">
+                <form method="POST" action="{{ url_for('update_profile') }}">
+                    <div class="form-group">
+                        <label for="first_name" class="form-label">
+                            <i class="fas fa-user"></i>
+                            First Name
+                        </label>
+                        <input type="text" id="first_name" name="first_name" class="form-input" 
+                               value="{{ current_user.first_name }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="last_name" class="form-label">
+                            <i class="fas fa-user"></i>
+                            Last Name
+                        </label>
+                        <input type="text" id="last_name" name="last_name" class="form-input" 
+                               value="{{ current_user.last_name }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope"></i>
+                            Email Address
+                        </label>
+                        <input type="email" id="email" name="email" class="form-input" 
+                               value="{{ current_user.email }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-id-badge"></i>
+                            Username
+                        </label>
+                        <input type="text" class="form-input" value="{{ current_user.username }}" disabled>
+                        <small style="color: var(--gray-500);">Username cannot be changed</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-user-tag"></i>
+                            Role
+                        </label>
+                        <input type="text" class="form-input" value="{{ current_user.role.title() }}" disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-calendar"></i>
+                            Member Since
+                        </label>
+                        <input type="text" class="form-input" 
+                               value="{{ current_user.created_at.strftime('%B %d, %Y') }}" disabled>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Update Profile
+                        </button>
+                        <a href="{{ url_for('settings') }}" class="btn btn-outline">
+                            <i class="fas fa-cog"></i>
+                            Account Settings
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-line"></i> Account Statistics</h2>
+            </div>
+            <div class="assignments-list">
+                <div class="stat-card" style="margin-bottom: 1rem;">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-upload"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ current_user.submissions|length }}</h3>
+                        <p>Total Submissions</p>
+                    </div>
+                </div>
+                
+                {% if current_user.role == 'student' %}
+                <div class="stat-card" style="margin-bottom: 1rem;">
+                    <div class="stat-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ current_user.submissions|selectattr('grades')|list|length }}</h3>
+                        <p>Graded Assignments</p>
+                    </div>
+                </div>
+                {% elif current_user.role == 'lecturer' %}
+                <div class="stat-card" style="margin-bottom: 1rem;">
+                    <div class="stat-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ current_user.assignments_created|length }}</h3>
+                        <p>Created Assignments</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ current_user.notifications|selectattr('is_read', 'equalto', false)|list|length }}</h3>
+                        <p>Unread Notifications</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        form.addEventListener('submit', function(e) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            submitBtn.disabled = true;
+        });
+    });
+</script>
+{% endblock %}

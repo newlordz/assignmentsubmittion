@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block title %}Submission Details - {{ submission.assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i class="fas fa-file-alt"></i> Submission Details</h1>
+            <p>Detailed view of submission for "{{ submission.assignment.title }}"</p>
+        </div>
+        <div class="header-actions">
+            {% if current_user.role in ['lecturer', 'admin'] %}
+            <a href="{{ url_for('view_assignment_submissions', assignment_id=submission.assignment.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Submissions
+            </a>
+            {% else %}
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="submission-details-grid">
+        <!-- Assignment Information -->
+        <div class="info-card">
+            <div class="card-header">
+                <h2><i class="fas fa-clipboard-list"></i> Assignment Information</h2>
+            </div>
+            <div class="card-content">
+                <div class="info-item">
+                    <label>Title:</label>
+                    <span>{{ submission.assignment.title }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Description:</label>
+                    <span>{{ submission.assignment.description }}</span>
+                </div>
+                {% if submission.assignment.instructions %}
+                <div class="info-item">
+                    <label>Instructions:</label>
+                    <span>{{ submission.assignment.instructions }}</span>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <label>Due Date:</label>
+                    <span>{{ submission.assignment.due_date.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Maximum Marks:</label>
+                    <span>{{ submission.assignment.max_marks }}</span>
+                </div>
+                {% if submission.assignment.file_requirements %}
+                <div class="info-item">
+                    <label>File Requirements:</label>
+                    <span>{{ submission.assignment.file_requirements }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Student Information -->
+        <div class="info-card">
+            <div class="card-header">
+                <h2><i class="fas fa-user"></i> Student Information</h2>
+            </div>
+            <div class="card-content">
+                <div class="info-item">
+                    <label>Name:</label>
+                    <span>{{ submission.student.first_name }} {{ submission.student.last_name }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Username:</label>
+                    <span>{{ submission.student.username }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Email:</label>
+                    <span>{{ submission.student.email }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submission Information -->
+        <div class="info-card">
+            <div class="card-header">
+                <h2><i class="fas fa-file-upload"></i> Submission Information</h2>
+            </div>
+            <div class="card-content">
+                <div class="info-item">
+                    <label>File Name:</label>
+                    <span>{{ submission.file_name }}</span>
+                </div>
+                <div class="info-item">
+                    <label>File Size:</label>
+                    <span>{{ "%.1f"|format(submission.file_size / 1024) }} KB</span>
+                </div>
+                <div class="info-item">
+                    <label>Submitted At:</label>
+                    <span>{{ submission.submitted_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Status:</label>
+                    <span class="status-badge {{ 'late' if submission.is_late else 'on-time' }}">
+                        {{ 'Late Submission' if submission.is_late else 'On Time' }}
+                    </span>
+                </div>
+                {% if submission.plagiarism_score > 0 %}
+                <div class="info-item">
+                    <label>Plagiarism Score:</label>
+                    <span class="plagiarism-score {{ 'high' if submission.plagiarism_score > 50 else 'low' }}">
+                        {{ "%.1f"|format(submission.plagiarism_score) }}%
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Grade Information -->
+        {% set grade = submission.grades|first %}
+        <div class="info-card">
+            <div class="card-header">
+                <h2><i class="fas fa-star"></i> Grade Information</h2>
+            </div>
+            <div class="card-content">
+                {% if grade %}
+                <div class="grade-display">
+                    <div class="grade-score">
+                        <span class="marks">{{ grade.marks }}</span>
+                        <span class="separator">/</span>
+                        <span class="max-marks">{{ submission.assignment.max_marks }}</span>
+                    </div>
+                    <div class="grade-percentage">
+                        {{ "%.1f"|format((grade.marks / submission.assignment.max_marks) * 100) }}%
+                    </div>
+                </div>
+                <div class="info-item">
+                    <label>Graded At:</label>
+                    <span>{{ grade.graded_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Graded By:</label>
+                    <span>{{ grade.grader.first_name }} {{ grade.grader.last_name }}</span>
+                </div>
+                {% if grade.feedback %}
+                <div class="info-item feedback-item">
+                    <label>Feedback:</label>
+                    <div class="feedback-content">{{ grade.feedback }}</div>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="no-grade">
+                    <i class="fas fa-clock"></i>
+                    <span>No grade assigned yet</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- File Actions -->
+    <div class="file-actions-section">
+        <div class="section-header">
+            <h2><i class="fas fa-download"></i> File Actions</h2>
+        </div>
+        <div class="action-buttons">
+            <a href="{{ url_for('static', filename='uploads/' + submission.file_path.split('/')[-1]) }}" 
+               class="btn btn-primary" download>
+                <i class="fas fa-download"></i>
+                Download File
+            </a>
+            {% if current_user.role in ['lecturer', 'admin'] %}
+            {% if not grade %}
+            <a href="{{ url_for('grade_submission', submission_id=submission.id) }}" class="btn btn-success">
+                <i class="fas fa-star"></i>
+                Grade Submission
+            </a>
+            {% else %}
+            <a href="{{ url_for('grade_submission', submission_id=submission.id) }}" class="btn btn-outline">
+                <i class="fas fa-edit"></i>
+                Update Grade
+            </a>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Plagiarism Report -->
+    {% if submission.plagiarism_report %}
+    <div class="plagiarism-section">
+        <div class="section-header">
+            <h2><i class="fas fa-search"></i> Plagiarism Report</h2>
+        </div>
+        <div class="plagiarism-content">
+            <p>{{ submission.plagiarism_report }}</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.header-content h1 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-900);
+}
+
+.header-content p {
+    margin: 0;
+    color: var(--gray-600);
+}
+
+.submission-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.info-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.card-header {
+    background: var(--gray-50);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.card-header h2 {
+    margin: 0;
+    color: var(--gray-900);
+    font-size: 1.125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-content {
+    padding: 1.5rem;
+}
+
+.info-item {
+    margin-bottom: 1rem;
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-item label {
+    display: block;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 0.25rem;
+}
+
+.info-item span {
+    color: var(--gray-900);
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-badge.on-time {
+    background: var(--success-color);
+    color: white;
+}
+
+.status-badge.late {
+    background: var(--warning-color);
+    color: white;
+}
+
+.plagiarism-score {
+    font-weight: 600;
+}
+
+.plagiarism-score.low {
+    color: var(--success-color);
+}
+
+.plagiarism-score.high {
+    color: var(--error-color);
+}
+
+.grade-display {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.grade-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.grade-score .marks {
+    color: var(--success-color);
+}
+
+.grade-score .separator {
+    color: var(--gray-500);
+}
+
+.grade-score .max-marks {
+    color: var(--gray-600);
+}
+
+.grade-percentage {
+    font-size: 1.125rem;
+    color: var(--gray-600);
+    margin-top: 0.5rem;
+}
+
+.no-grade {
+    text-align: center;
+    color: var(--gray-500);
+    padding: 2rem;
+}
+
+.no-grade i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.feedback-item {
+    margin-top: 1rem;
+}
+
+.feedback-content {
+    background: var(--gray-50);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary-color);
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.file-actions-section,
+.plagiarism-section {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+}
+
+.section-header {
+    background: var(--gray-50);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.section-header h2 {
+    margin: 0;
+    color: var(--gray-900);
+    font-size: 1.125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.action-buttons {
+    padding: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.plagiarism-content {
+    padding: 1.5rem;
+}
+
+.plagiarism-content p {
+    margin: 0;
+    color: var(--gray-700);
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .submission-details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

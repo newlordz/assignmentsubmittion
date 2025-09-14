@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1><i class="fas fa-user-edit"></i> Edit User</h1>
+            <p>Modify user information and settings</p>
+        </div>
+        <div class="dashboard-actions">
+            <a href="{{ url_for('admin_users') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                Back to Users
+            </a>
+        </div>
+    </div>
+    
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2><i class="fas fa-user-edit"></i> User Information</h2>
+        </div>
+        
+        <div class="assignments-list">
+            <form method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name" class="form-label">
+                            <i class="fas fa-user"></i>
+                            First Name
+                        </label>
+                        <input type="text" id="first_name" name="first_name" class="form-input" 
+                               value="{{ user.first_name }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="last_name" class="form-label">
+                            <i class="fas fa-user"></i>
+                            Last Name
+                        </label>
+                        <input type="text" id="last_name" name="last_name" class="form-input" 
+                               value="{{ user.last_name }}" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-at"></i>
+                            Username
+                        </label>
+                        <input type="text" id="username" name="username" class="form-input" 
+                               value="{{ user.username }}" required>
+                        <small class="form-help">Must be unique and contain only letters, numbers, and underscores</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope"></i>
+                            Email Address
+                        </label>
+                        <input type="email" id="email" name="email" class="form-input" 
+                               value="{{ user.email }}" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i>
+                            New Password
+                        </label>
+                        <input type="password" id="password" name="password" class="form-input" 
+                               placeholder="Leave blank to keep current password" minlength="6">
+                        <div class="password-strength">
+                            <div class="strength-bar">
+                                <div class="strength-fill" id="strengthFill"></div>
+                            </div>
+                            <div class="strength-text" id="strengthText">Password strength</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="role" class="form-label">
+                            <i class="fas fa-user-tag"></i>
+                            Role
+                        </label>
+                        <select id="role" name="role" class="form-select" required>
+                            <option value="student" {{ 'selected' if user.role == 'student' else '' }}>Student</option>
+                            <option value="lecturer" {{ 'selected' if user.role == 'lecturer' else '' }}>Lecturer</option>
+                            <option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Administrator</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_active" {{ 'checked' if user.is_active else '' }}>
+                        <span class="checkmark"></span>
+                        Account is active (user can log in)
+                    </label>
+                </div>
+                
+                <div class="user-info-section">
+                    <h3><i class="fas fa-info-circle"></i> Account Information</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">User ID:</span>
+                            <span class="info-value">{{ user.id }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Created:</span>
+                            <span class="info-value">{{ user.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Login:</span>
+                            <span class="info-value">Never</span>
+                        </div>
+                        {% if user.role == 'student' %}
+                        <div class="info-item">
+                            <span class="info-label">Submissions:</span>
+                            <span class="info-value">{{ user.submissions|length }}</span>
+                        </div>
+                        {% elif user.role == 'lecturer' %}
+                        <div class="info-item">
+                            <span class="info-label">Assignments Created:</span>
+                            <span class="info-value">{{ user.assignments_created|length }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Update User
+                    </button>
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-help {
+    color: var(--gray-500);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.user-info-section {
+    background: var(--gray-50);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    margin: 2rem 0;
+}
+
+.user-info-section h3 {
+    margin: 0 0 1rem 0;
+    color: var(--gray-900);
+    font-size: 1.125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.info-value {
+    color: var(--gray-900);
+    font-weight: 600;
+}
+</style>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('password');
+        const strengthFill = document.getElementById('strengthFill');
+        const strengthText = document.getElementById('strengthText');
+        
+        // Password strength checker
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            const strength = calculatePasswordStrength(password);
+            
+            strengthFill.className = 'strength-fill ' + strength.class;
+            strengthText.textContent = strength.text;
+            strengthText.className = 'strength-text ' + (strength.warning ? 'warning' : '');
+        });
+        
+        function calculatePasswordStrength(password) {
+            let score = 0;
+            let text = 'Password strength';
+            let className = '';
+            let warning = false;
+            
+            if (password.length >= 6) score++;
+            if (password.length >= 8) score++;
+            if (/[a-z]/.test(password)) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+            
+            if (score < 2) {
+                text = 'Weak';
+                className = 'weak';
+                warning = true;
+            } else if (score < 4) {
+                text = 'Medium';
+                className = 'medium';
+            } else {
+                text = 'Strong';
+                className = 'strong';
+            }
+            
+            return { text, class: className, warning };
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

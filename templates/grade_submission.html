@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Grade Submission - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h1><i class="fas fa-star"></i> Grade Submission</h1>
+            <p>Evaluate and provide feedback for student submission</p>
+        </div>
+        
+        <div class="submission-info">
+            <h2>{{ submission.assignment.title }}</h2>
+            <div class="submission-details">
+                <div class="detail-item">
+                    <i class="fas fa-user"></i>
+                    <span><strong>Student:</strong> {{ submission.student.first_name }} {{ submission.student.last_name }}</span>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-calendar"></i>
+                    <span><strong>Submitted:</strong> {{ submission.submitted_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-file"></i>
+                    <span><strong>File:</strong> {{ submission.file_name }} ({{ "%.1f"|format(submission.file_size / 1024) }} KB)</span>
+                </div>
+                {% if submission.is_late %}
+                <div class="detail-item warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span><strong>Status:</strong> Late Submission</span>
+                </div>
+                {% endif %}
+                {% if submission.plagiarism_score > 0 %}
+                <div class="detail-item">
+                    <i class="fas fa-search"></i>
+                    <span><strong>Plagiarism Score:</strong> {{ "%.1f"|format(submission.plagiarism_score) }}%</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="submission-actions">
+                <a href="{{ url_for('static', filename='uploads/' + submission.file_path.split('/')[-1]) }}" class="btn btn-outline" target="_blank">
+                    <i class="fas fa-download"></i>
+                    Download File
+                </a>
+                <button class="btn btn-outline" onclick="checkPlagiarism({{ submission.id }})">
+                    <i class="fas fa-search"></i>
+                    Check Plagiarism
+                </button>
+            </div>
+        </div>
+        
+        <form class="grading-form" method="POST">
+            <div class="grading-section">
+                <h3>Assignment Details</h3>
+                <div class="assignment-info">
+                    <p><strong>Description:</strong> {{ submission.assignment.description }}</p>
+                    {% if submission.assignment.instructions %}
+                    <p><strong>Instructions:</strong> {{ submission.assignment.instructions }}</p>
+                    {% endif %}
+                    <p><strong>Maximum Marks:</strong> {{ submission.assignment.max_marks }}</p>
+                </div>
+            </div>
+            
+            <div class="grading-section">
+                <h3>Grading</h3>
+                <div class="form-group">
+                    <label for="marks" class="form-label">
+                        <i class="fas fa-star"></i>
+                        Marks Awarded
+                    </label>
+                    <div class="marks-input-container">
+                        <input type="number" id="marks" name="marks" class="form-input marks-input" 
+                               min="0" max="{{ submission.assignment.max_marks }}" step="0.1" required 
+                               placeholder="Enter marks">
+                        <span class="marks-max">/ {{ submission.assignment.max_marks }}</span>
+                    </div>
+                    <div class="marks-slider">
+                        <input type="range" id="marksSlider" min="0" max="{{ submission.assignment.max_marks }}" 
+                               step="0.1" value="0" class="slider">
+                        <div class="slider-labels">
+                            <span>0</span>
+                            <span>{{ submission.assignment.max_marks }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grading-section">
+                <h3>Feedback</h3>
+                <div class="form-group">
+                    <label for="feedback" class="form-label">
+                        <i class="fas fa-comment"></i>
+                        Comments & Feedback
+                    </label>
+                    <textarea id="feedback" name="feedback" class="form-textarea" rows="6" 
+                              placeholder="Provide detailed feedback to help the student improve..."></textarea>
+                    <div class="feedback-templates">
+                        <h4>Quick Feedback Templates:</h4>
+                        <div class="template-buttons">
+                            <button type="button" class="template-btn" onclick="insertTemplate('excellent')">Excellent Work</button>
+                            <button type="button" class="template-btn" onclick="insertTemplate('good')">Good Effort</button>
+                            <button type="button" class="template-btn" onclick="insertTemplate('needs_improvement')">Needs Improvement</button>
+                            <button type="button" class="template-btn" onclick="insertTemplate('incomplete')">Incomplete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('lecturer_dashboard') }}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i>
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Save Grade
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Plagiarism Check Modal -->
+<div id="plagiarismModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Plagiarism Check Results</h3>
+            <button class="modal-close" onclick="closeModal('plagiarismModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="plagiarismContent">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Checking for plagiarism...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const marksInput = document.getElementById('marks');
+        const marksSlider = document.getElementById('marksSlider');
+        const feedbackTextarea = document.getElementById('feedback');
+        
+        // Sync marks input and slider
+        marksInput.addEventListener('input', function() {
+            marksSlider.value = this.value;
+        });
+        
+        marksSlider.addEventListener('input', function() {
+            marksInput.value = this.value;
+        });
+        
+        // Form submission
+        const form = document.querySelector('.grading-form');
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Grade...';
+            submitBtn.disabled = true;
+        });
+    });
+    
+    function insertTemplate(templateType) {
+        const textarea = document.getElementById('feedback');
+        const templates = {
+            excellent: "Excellent work! Your submission demonstrates a thorough understanding of the topic. The analysis is well-structured and your arguments are well-supported. Keep up the great work!",
+            good: "Good effort! Your submission shows understanding of the main concepts. Consider providing more detailed analysis and examples to strengthen your arguments.",
+            needs_improvement: "Your submission needs improvement. Please review the assignment requirements and ensure you address all aspects of the question. Consider seeking help if needed.",
+            incomplete: "This submission appears incomplete. Please ensure you have addressed all parts of the assignment and submitted your final work."
+        };
+        
+        if (textarea.value.trim() !== '') {
+            textarea.value += '\n\n' + templates[templateType];
+        } else {
+            textarea.value = templates[templateType];
+        }
+    }
+    
+    function checkPlagiarism(submissionId) {
+        const modal = document.getElementById('plagiarismModal');
+        const content = document.getElementById('plagiarismContent');
+        
+        modal.style.display = 'flex';
+        content.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i><p>Checking for plagiarism...</p></div>';
+        
+        // Simulate API call
+        fetch(`/api/plagiarism-check/${submissionId}`)
+            .then(response => response.json())
+            .then(data => {
+                content.innerHTML = `
+                    <div class="plagiarism-results">
+                        <div class="plagiarism-score ${data.plagiarism_score > 30 ? 'high' : data.plagiarism_score > 15 ? 'medium' : 'low'}">
+                            <h4>Plagiarism Score: ${data.plagiarism_score.toFixed(1)}%</h4>
+                        </div>
+                        <div class="plagiarism-report">
+                            <p>${data.report}</p>
+                        </div>
+                        <div class="plagiarism-actions">
+                            <button class="btn btn-outline" onclick="closeModal('plagiarismModal')">Close</button>
+                        </div>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                content.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error checking plagiarism. Please try again.</p>
+                        <button class="btn btn-outline" onclick="closeModal('plagiarismModal')">Close</button>
+                    </div>
+                `;
+            });
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('plagiarismModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

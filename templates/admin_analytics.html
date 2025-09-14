@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1><i class="fas fa-chart-line"></i> Analytics Dashboard</h1>
+            <p>Comprehensive system analytics and performance metrics</p>
+        </div>
+        <div class="dashboard-actions">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+            <a href="{{ url_for('admin_performance_report') }}" class="btn btn-primary">
+                <i class="fas fa-file-alt"></i>
+                Performance Report
+            </a>
+            <a href="{{ url_for('admin_assignment_report') }}" class="btn btn-primary">
+                <i class="fas fa-clipboard-list"></i>
+                Assignment Report
+            </a>
+        </div>
+    </div>
+    
+    <!-- Key Metrics -->
+    <div class="analytics-grid">
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="metric-content">
+                <h3>{{ total_users }}</h3>
+                <p>Total Users</p>
+                <div class="metric-breakdown">
+                    <span>{{ total_students }} Students</span>
+                    <span>{{ total_lecturers }} Lecturers</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="metric-content">
+                <h3>{{ total_assignments }}</h3>
+                <p>Total Assignments</p>
+                <div class="metric-breakdown">
+                    <span>{{ submission_rate }}% Submission Rate</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-file-upload"></i>
+            </div>
+            <div class="metric-content">
+                <h3>{{ total_submissions }}</h3>
+                <p>Total Submissions</p>
+                <div class="metric-breakdown">
+                    <span>{{ late_rate }}% Late</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="metric-content">
+                <h3>{{ avg_grade }}</h3>
+                <p>Average Grade</p>
+                <div class="metric-breakdown">
+                    <span>{{ total_grades }} Graded</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-grid">
+        <!-- Academic Integrity -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-shield-alt"></i> Academic Integrity</h2>
+            </div>
+            
+            <div class="integrity-stats">
+                <div class="stat-item">
+                    <div class="stat-icon high-plagiarism">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ high_plagiarism }}</h3>
+                        <p>High Plagiarism Cases</p>
+                        <span class="stat-percentage">{{ plagiarism_rate }}%</span>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon late-submissions">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ late_submissions }}</h3>
+                        <p>Late Submissions</p>
+                        <span class="stat-percentage">{{ late_rate }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> Recent Activity</h2>
+            </div>
+            
+            <div class="activity-list">
+                {% for submission in recent_submissions %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-file-upload"></i>
+                    </div>
+                    <div class="activity-content">
+                        <h4>{{ submission.student.first_name }} {{ submission.student.last_name }}</h4>
+                        <p>Submitted: {{ submission.assignment.title }}</p>
+                        <span class="activity-time">{{ submission.submitted_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                    <div class="activity-status">
+                        {% if submission.is_late %}
+                        <span class="status-badge late">Late</span>
+                        {% else %}
+                        <span class="status-badge on-time">On Time</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Recent Grading -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-chalkboard-teacher"></i> Recent Grading</h2>
+            </div>
+            
+            <div class="grading-list">
+                {% for grade in recent_grades %}
+                <div class="grading-item">
+                    <div class="grading-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="grading-content">
+                        <h4>{{ grade.submission.student.first_name }} {{ grade.submission.student.last_name }}</h4>
+                        <p>{{ grade.submission.assignment.title }}</p>
+                        <span class="grading-time">{{ grade.graded_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                    <div class="grading-score">
+                        <span class="score">{{ grade.marks }}/{{ grade.submission.assignment.max_marks }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- System Performance -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-tachometer-alt"></i> System Performance</h2>
+            </div>
+            
+            <div class="performance-metrics">
+                <div class="performance-item">
+                    <div class="performance-label">Database Health</div>
+                    <div class="performance-bar">
+                        <div class="performance-fill" style="width: 95%"></div>
+                    </div>
+                    <div class="performance-value">95%</div>
+                </div>
+                
+                <div class="performance-item">
+                    <div class="performance-label">File System</div>
+                    <div class="performance-bar">
+                        <div class="performance-fill" style="width: 88%"></div>
+                    </div>
+                    <div class="performance-value">88%</div>
+                </div>
+                
+                <div class="performance-item">
+                    <div class="performance-label">Background Tasks</div>
+                    <div class="performance-bar">
+                        <div class="performance-fill" style="width: 92%"></div>
+                    </div>
+                    <div class="performance-value">92%</div>
+                </div>
+                
+                <div class="performance-item">
+                    <div class="performance-label">User Satisfaction</div>
+                    <div class="performance-bar">
+                        <div class="performance-fill" style="width: 87%"></div>
+                    </div>
+                    <div class="performance-value">87%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--gray-200);
+    transition: var(--transition);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.metric-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.metric-content h3 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin: 0 0 0.5rem 0;
+}
+
+.metric-content p {
+    color: var(--gray-600);
+    font-size: 1rem;
+    margin: 0 0 1rem 0;
+}
+
+.metric-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.metric-breakdown span {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    padding: 0.25rem 0.5rem;
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+}
+
+.integrity-stats {
+    display: flex;
+    gap: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    flex: 1;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.25rem;
+}
+
+.high-plagiarism {
+    background: var(--error-color);
+}
+
+.late-submissions {
+    background: var(--warning-color);
+}
+
+.stat-content h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0 0 0.25rem 0;
+}
+
+.stat-content p {
+    color: var(--gray-600);
+    margin: 0 0 0.5rem 0;
+}
+
+.stat-percentage {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-500);
+}
+
+.activity-list, .grading-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item, .grading-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.activity-item:hover, .grading-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow);
+}
+
+.activity-icon, .grading-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--gray-100);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.activity-content, .grading-content {
+    flex: 1;
+}
+
+.activity-content h4, .grading-content h4 {
+    margin: 0 0 0.25rem 0;
+    color: var(--gray-900);
+    font-size: 1rem;
+}
+
+.activity-content p, .grading-content p {
+    margin: 0 0 0.25rem 0;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+
+.activity-time, .grading-time {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.late {
+    background: var(--error-color);
+    color: var(--white);
+}
+
+.status-badge.on-time {
+    background: var(--success-color);
+    color: var(--white);
+}
+
+.grading-score {
+    text-align: right;
+}
+
+.score {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.performance-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.performance-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.performance-label {
+    min-width: 120px;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.performance-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.performance-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success-color), var(--primary-color));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.performance-value {
+    min-width: 40px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+@media (max-width: 768px) {
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .integrity-stats {
+        flex-direction: column;
+    }
+    
+    .activity-item, .grading-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .performance-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .performance-label {
+        min-width: auto;
+    }
+}
+</style>
+{% endblock %}

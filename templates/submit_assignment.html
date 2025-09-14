@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Assignment - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h1><i class="fas fa-upload"></i> Submit Assignment</h1>
+            <p>Upload your assignment file for submission</p>
+        </div>
+        
+        <div class="assignment-info">
+            <h2>{{ assignment.title }}</h2>
+            <div class="assignment-details">
+                <div class="detail-item">
+                    <i class="fas fa-calendar"></i>
+                    <span><strong>Due Date:</strong> {{ assignment.due_date.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-star"></i>
+                    <span><strong>Maximum Marks:</strong> {{ assignment.max_marks }}</span>
+                </div>
+                {% if assignment.file_requirements %}
+                <div class="detail-item">
+                    <i class="fas fa-file"></i>
+                    <span><strong>File Requirements:</strong> {{ assignment.file_requirements }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="assignment-description">
+                <h3>Description</h3>
+                <p>{{ assignment.description }}</p>
+            </div>
+            
+            {% if assignment.instructions %}
+            <div class="assignment-instructions">
+                <h3>Instructions</h3>
+                <p>{{ assignment.instructions }}</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <form class="submission-form" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file" class="form-label">
+                    <i class="fas fa-file-upload"></i>
+                    Select File
+                </label>
+                <div class="file-upload-area" id="fileUploadArea">
+                    <input type="file" id="file" name="file" class="file-input" required accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.zip,.rar">
+                    <div class="file-upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to select file or drag and drop</p>
+                        <small>Supported formats: PDF, DOC, DOCX, TXT, PPT, PPTX, ZIP, RAR (Max 16MB)</small>
+                    </div>
+                </div>
+                <div class="file-info" id="fileInfo" style="display: none;">
+                    <div class="file-preview">
+                        <i class="fas fa-file"></i>
+                        <div class="file-details">
+                            <span class="file-name"></span>
+                            <span class="file-size"></span>
+                        </div>
+                        <button type="button" class="file-remove" onclick="removeFile()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="submission-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p><strong>Important:</strong> Please ensure your file is the final version. Once submitted, you cannot modify your submission unless the lecturer allows it.</p>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i>
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                    <i class="fas fa-upload"></i>
+                    Submit Assignment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('file');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInfo = document.getElementById('fileInfo');
+        const submitBtn = document.getElementById('submitBtn');
+        const form = document.querySelector('.submission-form');
+        
+        // File upload area click handler
+        fileUploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        // Drag and drop handlers
+        fileUploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        fileUploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+        
+        fileUploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect(files[0]);
+            }
+        });
+        
+        // File input change handler
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                handleFileSelect(this.files[0]);
+            }
+        });
+        
+        function handleFileSelect(file) {
+            // Validate file size (16MB max)
+            const maxSize = 16 * 1024 * 1024; // 16MB in bytes
+            if (file.size > maxSize) {
+                alert('File size must be less than 16MB');
+                return;
+            }
+            
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/zip', 'application/x-rar-compressed'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('File type not supported. Please select a PDF, DOC, DOCX, TXT, PPT, PPTX, ZIP, or RAR file.');
+                return;
+            }
+            
+            // Show file info
+            const fileName = file.name;
+            const fileSize = formatFileSize(file.size);
+            
+            document.querySelector('.file-name').textContent = fileName;
+            document.querySelector('.file-size').textContent = fileSize;
+            
+            fileUploadArea.style.display = 'none';
+            fileInfo.style.display = 'block';
+            submitBtn.disabled = false;
+        }
+        
+        function removeFile() {
+            fileInput.value = '';
+            fileUploadArea.style.display = 'block';
+            fileInfo.style.display = 'none';
+            submitBtn.disabled = true;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            submitBtn.disabled = true;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% block title %}Home - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-background">
+        <div class="hero-particles"></div>
+        <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </div>
+    <div class="hero-container">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fas fa-star"></i>
+                <span>Trusted by 10,000+ Students</span>
+            </div>
+            <h1 class="hero-title">
+                <span class="gradient-text">E-Assignment</span>
+                <br>Submission System
+            </h1>
+            <p class="hero-description">
+                🚀 Transform your academic journey with our cutting-edge assignment platform! 
+                Submit, track, and excel with AI-powered plagiarism detection, instant feedback, 
+                and smart deadline management. Make learning effortless and fun! ✨
+            </p>
+            <div class="hero-buttons">
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-large btn-glow">
+                    <i class="fas fa-rocket"></i>
+                    Start Your Journey
+                    <span class="btn-ripple"></span>
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-secondary btn-large">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login
+                </a>
+                <a href="{{ url_for('demo_login') }}" class="btn btn-outline btn-large" style="background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.5); color: white;">
+                    <i class="fas fa-users"></i>
+                    Try Demo
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-number">10K+</span>
+                    <span class="stat-label">Students</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">50K+</span>
+                    <span class="stat-label">Submissions</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">99.9%</span>
+                    <span class="stat-label">Uptime</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="floating-cards">
+                <div class="card card-1">
+                    <div class="card-icon">
+                        <i class="fas fa-file-upload"></i>
+                    </div>
+                    <span>Submit</span>
+                    <div class="card-glow"></div>
+                </div>
+                <div class="card card-2">
+                    <div class="card-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <span>Check</span>
+                    <div class="card-glow"></div>
+                </div>
+                <div class="card card-3">
+                    <div class="card-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <span>Grade</span>
+                    <div class="card-glow"></div>
+                </div>
+                <div class="card card-4">
+                    <div class="card-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <span>Track</span>
+                    <div class="card-glow"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features">
+    <div class="container">
+        <div class="section-header">
+            <h2>🎯 Why Students Love Us</h2>
+            <p>Everything you need to ace your assignments, all in one place!</p>
+        </div>
+        
+        <div class="features-grid">
+            <!-- Student Features -->
+            <div class="feature-card feature-card-primary">
+                <div class="feature-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3>🎓 For Students</h3>
+                <p class="feature-description">Your personal academic assistant</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> 📤 One-click assignment submission</li>
+                    <li><i class="fas fa-check"></i> 🤖 AI-powered plagiarism detection</li>
+                    <li><i class="fas fa-check"></i> ⏰ Smart deadline reminders</li>
+                    <li><i class="fas fa-check"></i> 📊 Real-time grade tracking</li>
+                    <li><i class="fas fa-check"></i> 💬 Detailed feedback access</li>
+                    <li><i class="fas fa-check"></i> 📱 Mobile-friendly interface</li>
+                </ul>
+                <div class="feature-highlight">Most Popular! 🏆</div>
+            </div>
+            
+            <!-- Lecturer Features -->
+            <div class="feature-card feature-card-secondary">
+                <div class="feature-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <h3>👨‍🏫 For Lecturers</h3>
+                <p class="feature-description">Streamline your teaching workflow</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> 📝 Create and manage assignments</li>
+                    <li><i class="fas fa-check"></i> ⚡ Automated deadline enforcement</li>
+                    <li><i class="fas fa-check"></i> 📊 Built-in grading system</li>
+                    <li><i class="fas fa-check"></i> 🔍 Plagiarism report generation</li>
+                    <li><i class="fas fa-check"></i> 📈 Student progress tracking</li>
+                    <li><i class="fas fa-check"></i> 📧 Bulk notifications</li>
+                </ul>
+            </div>
+            
+            <!-- Admin Features -->
+            <div class="feature-card feature-card-tertiary">
+                <div class="feature-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h3>⚙️ For Administrators</h3>
+                <p class="feature-description">Complete system control</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> 👥 User account management</li>
+                    <li><i class="fas fa-check"></i> 🔧 System configuration</li>
+                    <li><i class="fas fa-check"></i> 📊 Performance monitoring</li>
+                    <li><i class="fas fa-check"></i> 📈 Analytics and reporting</li>
+                    <li><i class="fas fa-check"></i> 🔒 Data security management</li>
+                    <li><i class="fas fa-check"></i> 🚀 System optimization</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials">
+    <div class="container">
+        <div class="section-header">
+            <h2>💬 What Students Say</h2>
+            <p>Real feedback from real students</p>
+        </div>
+        
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"This platform made submitting assignments so much easier! The AI plagiarism checker saved me from accidental citations. Love it! 🎉"</p>
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">S</div>
+                    <div class="author-info">
+                        <h4>Sarah Johnson</h4>
+                        <span>Computer Science Student</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"The deadline reminders are a lifesaver! Never missed an assignment again. The interface is super intuitive and fun to use! 🚀"</p>
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">M</div>
+                    <div class="author-info">
+                        <h4>Mike Chen</h4>
+                        <span>Engineering Student</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <div class="stars">⭐⭐⭐⭐⭐</div>
+                    <p>"As a lecturer, this platform has revolutionized how I manage assignments. The grading system is efficient and the analytics are amazing! 📊"</p>
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">D</div>
+                    <div class="author-info">
+                        <h4>Dr. Emily Davis</h4>
+                        <span>Mathematics Professor</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works">
+    <div class="container">
+        <div class="section-header">
+            <h2>🚀 How It Works</h2>
+            <p>Get started in minutes, not hours! Here's your simple roadmap to success</p>
+        </div>
+        
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>🎯 Sign Up & Login</h3>
+                    <p>Create your account in 30 seconds and access your personalized dashboard. Choose your role: Student, Lecturer, or Admin!</p>
+                    <div class="step-features">
+                        <span class="feature-tag">Quick Setup</span>
+                        <span class="feature-tag">Secure</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>📤 Submit Assignments</h3>
+                    <p>Drag, drop, and submit! Our intuitive interface makes uploading your work as easy as sharing a photo on social media.</p>
+                    <div class="step-features">
+                        <span class="feature-tag">Drag & Drop</span>
+                        <span class="feature-tag">Multiple Formats</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>🤖 AI Originality Check</h3>
+                    <p>Our smart AI instantly scans your work for originality. Get detailed reports and suggestions to improve your writing!</p>
+                    <div class="step-features">
+                        <span class="feature-tag">Instant Results</span>
+                        <span class="feature-tag">Detailed Reports</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>📊 Track & Improve</h3>
+                    <p>Get real-time feedback, grades, and insights. Track your progress and never miss a deadline again!</p>
+                    <div class="step-features">
+                        <span class="feature-tag">Real-time</span>
+                        <span class="feature-tag">Progress Tracking</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Fun Facts Section -->
+<section class="fun-facts">
+    <div class="container">
+        <div class="section-header">
+            <h2>🎉 Fun Facts About Our Platform</h2>
+            <p>Numbers that speak for themselves!</p>
+        </div>
+        
+        <div class="facts-grid">
+            <div class="fact-card">
+                <div class="fact-icon">⚡</div>
+                <div class="fact-number">2.3s</div>
+                <div class="fact-label">Average Upload Time</div>
+            </div>
+            <div class="fact-card">
+                <div class="fact-icon">🎯</div>
+                <div class="fact-number">99.2%</div>
+                <div class="fact-label">Accuracy Rate</div>
+            </div>
+            <div class="fact-card">
+                <div class="fact-icon">📱</div>
+                <div class="fact-number">100%</div>
+                <div class="fact-label">Mobile Responsive</div>
+            </div>
+            <div class="fact-card">
+                <div class="fact-icon">🔒</div>
+                <div class="fact-number">256-bit</div>
+                <div class="fact-label">SSL Encryption</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta">
+    <div class="container">
+        <div class="cta-content">
+            <h2>🎓 Ready to Ace Your Assignments?</h2>
+            <p>Join 10,000+ students who are already crushing their academic goals with our platform!</p>
+            <div class="cta-buttons">
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-large btn-glow">
+                    <i class="fas fa-rocket"></i>
+                    Start Your Journey
+                    <span class="btn-ripple"></span>
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline btn-large">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Already a Member?
+                </a>
+            </div>
+            <div class="cta-guarantee">
+                <i class="fas fa-shield-alt"></i>
+                <span>100% Free • No Credit Card Required • Setup in 30 seconds</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-content">
+        <div class="footer-section">
+            <h3>🚀 E-Assignment System</h3>
+            <p>Making academic life easier, one assignment at a time. Built by students, for students!</p>
+            <div class="social-links">
+                <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+                <li><a href="{{ url_for('register') }}">Register</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>Support</h4>
+            <ul>
+                <li><a href="{{ url_for('help_center') }}">Help Center</a></li>
+                <li><a href="{{ url_for('contact_us') }}">Contact Us</a></li>
+                <li><a href="{{ url_for('privacy_policy') }}">Privacy Policy</a></li>
+                <li><a href="{{ url_for('terms_of_service') }}">Terms of Service</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024 E-Assignment Submission System. Made with ❤️ for students everywhere!</p>
+    </div>
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Enhanced animations and interactions
+    document.addEventListener('DOMContentLoaded', function() {
+        // Floating cards animation
+        const cards = document.querySelectorAll('.floating-cards .card');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.5}s`;
+        });
+
+        // Button ripple effect
+        const buttons = document.querySelectorAll('.btn-glow');
+        buttons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                const ripple = this.querySelector('.btn-ripple');
+                if (ripple) {
+                    ripple.style.animation = 'ripple 0.6s linear';
+                    setTimeout(() => {
+                        ripple.style.animation = '';
+                    }, 600);
+                }
+            });
+        });
+
+        // Scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements for scroll animations
+        const animateElements = document.querySelectorAll('.feature-card, .testimonial-card, .step, .fact-card');
+        animateElements.forEach(el => observer.observe(el));
+
+        // Parallax effect for hero background
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const heroBackground = document.querySelector('.hero-background');
+            if (heroBackground) {
+                heroBackground.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
+        });
+
+        // Typing effect for hero title
+        const heroTitle = document.querySelector('.hero-title .gradient-text');
+        if (heroTitle) {
+            const text = heroTitle.textContent;
+            heroTitle.textContent = '';
+            let i = 0;
+            const typeWriter = () => {
+                if (i < text.length) {
+                    heroTitle.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 100);
+                }
+            };
+            setTimeout(typeWriter, 1000);
+        }
+    });
+</script>
+{% endblock %}

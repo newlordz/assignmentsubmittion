@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1>Admin Dashboard</h1>
+            <p>System overview and management</p>
+        </div>
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ total_students }}</h3>
+                    <p>Total Students</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ total_lecturers }}</h3>
+                    <p>Total Lecturers</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ total_assignments }}</h3>
+                    <p>Total Assignments</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-file-upload"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ total_submissions }}</h3>
+                    <p>Total Submissions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-actions">
+        <a href="{{ url_for('admin_users') }}" class="btn btn-primary">
+            <i class="fas fa-users"></i>
+            Manage Users
+        </a>
+        <a href="{{ url_for('admin_settings') }}" class="btn btn-outline">
+            <i class="fas fa-cogs"></i>
+            System Settings
+        </a>
+        <a href="{{ url_for('admin_analytics') }}" class="btn btn-outline">
+            <i class="fas fa-chart-bar"></i>
+            Analytics
+        </a>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- System Overview -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-pie"></i> System Overview</h2>
+            </div>
+            
+            <div class="overview-cards">
+                <div class="overview-card">
+                    <div class="overview-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="overview-content">
+                        <h3>User Management</h3>
+                        <p>Manage student and lecturer accounts</p>
+                        <div class="overview-stats">
+                            <span>{{ total_students }} Students</span>
+                            <span>{{ total_lecturers }} Lecturers</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overview-card">
+                    <div class="overview-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="overview-content">
+                        <h3>Assignment Management</h3>
+                        <p>Monitor assignment activity</p>
+                        <div class="overview-stats">
+                            <span>{{ total_assignments }} Active</span>
+                            <span>{{ total_submissions }} Submissions</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overview-card">
+                    <div class="overview-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="overview-content">
+                        <h3>Security & Monitoring</h3>
+                        <p>System security and performance</p>
+                        <div class="overview-stats">
+                            <span>System Healthy</span>
+                            <span>99.9% Uptime</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> Recent Activity</h2>
+            </div>
+            
+            {% if recent_submissions %}
+            <div class="activity-list">
+                {% for submission in recent_submissions %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-file-upload"></i>
+                    </div>
+                    <div class="activity-content">
+                        <h4>{{ submission.student.first_name }} {{ submission.student.last_name }}</h4>
+                        <p>submitted <strong>{{ submission.assignment.title }}</strong></p>
+                        <span class="activity-time">{{ submission.submitted_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                    <div class="activity-status">
+                        {% if submission.is_late %}
+                        <span class="status-badge late">Late</span>
+                        {% else %}
+                        <span class="status-badge on-time">On Time</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-history"></i>
+                <h3>No recent activity</h3>
+                <p>System activity will appear here.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+            </div>
+            
+            <div class="quick-actions">
+                <button class="quick-action-btn" onclick="createUser()">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Create User</span>
+                </button>
+                
+                <button class="quick-action-btn" onclick="viewLogs()">
+                    <i class="fas fa-file-alt"></i>
+                    <span>View Logs</span>
+                </button>
+                
+                <button class="quick-action-btn" onclick="backupData()">
+                    <i class="fas fa-download"></i>
+                    <span>Backup Data</span>
+                </button>
+                
+                <button class="quick-action-btn" onclick="systemHealth()">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>System Health</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="userManagementModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>User Management</h3>
+            <button class="modal-close" onclick="closeModal('userManagementModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>User management interface would be implemented here.</p>
+        </div>
+    </div>
+</div>
+
+<div id="systemSettingsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>System Settings</h3>
+            <button class="modal-close" onclick="closeModal('systemSettingsModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>System settings interface would be implemented here.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function showUserManagement() {
+        document.getElementById('userManagementModal').style.display = 'flex';
+    }
+    
+    function showSystemSettings() {
+        document.getElementById('systemSettingsModal').style.display = 'flex';
+    }
+    
+    function generateReport() {
+        alert('Report generation feature would be implemented here.');
+    }
+    
+    function createUser() {
+        alert('Create user feature would be implemented here.');
+    }
+    
+    function viewLogs() {
+        alert('View logs feature would be implemented here.');
+    }
+    
+    function backupData() {
+        alert('Backup data feature would be implemented here.');
+    }
+    
+    function systemHealth() {
+        alert('System health check would be implemented here.');
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+    
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

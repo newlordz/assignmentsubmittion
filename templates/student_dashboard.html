@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1>Welcome back, {{ current_user.first_name }}!</h1>
+            <p>Manage your assignments and track your progress</p>
+        </div>
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ assignments|length }}</h3>
+                    <p>Available Assignments</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ submissions|length }}</h3>
+                    <p>Submissions Made</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    {% if notifications %}
+    <div class="notifications-section">
+        <h2><i class="fas fa-bell"></i> Recent Notifications</h2>
+        <div class="notifications-list">
+            {% for notification in notifications %}
+            <div class="notification-item">
+                <div class="notification-icon">
+                    <i class="fas fa-{{ 'exclamation-triangle' if notification.notification_type == 'deadline' else 'check-circle' if notification.notification_type == 'grade' else 'info-circle' }}"></i>
+                </div>
+                <div class="notification-content">
+                    <h4>{{ notification.title }}</h4>
+                    <p>{{ notification.message }}</p>
+                    <span class="notification-time">{{ notification.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="dashboard-grid">
+        <!-- Available Assignments -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-clipboard-list"></i> Available Assignments</h2>
+                <span class="section-count">{{ assignments|length }}</span>
+            </div>
+            
+            {% if assignments %}
+            <div class="assignments-list">
+                {% for assignment in assignments %}
+                <div class="assignment-card">
+                    <div class="assignment-header">
+                        <h3>{{ assignment.title }}</h3>
+                        <div class="assignment-meta">
+                            <span class="due-date">
+                                <i class="fas fa-calendar"></i>
+                                Due: {{ assignment.due_date.strftime('%B %d, %Y at %I:%M %p') }}
+                            </span>
+                            <span class="max-marks">
+                                <i class="fas fa-star"></i>
+                                {{ assignment.max_marks }} marks
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="assignment-content">
+                        <p>{{ assignment.description[:150] }}{% if assignment.description|length > 150 %}...{% endif %}</p>
+                        
+                        {% if assignment.file_requirements %}
+                        <div class="file-requirements">
+                            <i class="fas fa-file"></i>
+                            <span>{{ assignment.file_requirements }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="assignment-actions">
+                        {% set user_submission = submissions|selectattr('assignment_id', 'equalto', assignment.id)|first %}
+                        {% if user_submission %}
+                            <div class="submission-status submitted">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Submitted</span>
+                                <small>{{ user_submission.submitted_at.strftime('%B %d, %Y') }}</small>
+                            </div>
+                            {% if user_submission.is_late %}
+                            <span class="late-badge">Late</span>
+                            {% endif %}
+                        {% else %}
+                            <a href="{{ url_for('submit_assignment', assignment_id=assignment.id) }}" class="btn btn-primary">
+                                <i class="fas fa-upload"></i>
+                                Submit Assignment
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>No assignments available</h3>
+                <p>Check back later for new assignments from your lecturers.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- My Submissions -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> My Submissions</h2>
+                <span class="section-count">{{ submissions|length }}</span>
+            </div>
+            
+            {% if submissions %}
+            <div class="submissions-list">
+                {% for submission in submissions %}
+                <div class="submission-card">
+                    <div class="submission-header">
+                        <h3>{{ submission.assignment.title }}</h3>
+                        <div class="submission-meta">
+                            <span class="submission-date">
+                                <i class="fas fa-calendar"></i>
+                                {{ submission.submitted_at.strftime('%B %d, %Y') }}
+                            </span>
+                            {% if submission.is_late %}
+                            <span class="late-badge">Late</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="submission-content">
+                        <div class="file-info">
+                            <i class="fas fa-file"></i>
+                            <span>{{ submission.file_name }}</span>
+                            <small>{{ "%.1f"|format(submission.file_size / 1024) }} KB</small>
+                        </div>
+                        
+                        {% if submission.plagiarism_score > 0 %}
+                        <div class="plagiarism-info">
+                            <i class="fas fa-search"></i>
+                            <span>Plagiarism Score: {{ "%.1f"|format(submission.plagiarism_score) }}%</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="submission-actions">
+                        {% set grade = submission.grades|first %}
+                        {% if grade %}
+                        <div class="grade-info">
+                            <span class="grade-score">{{ grade.marks }}/{{ submission.assignment.max_marks }}</span>
+                            {% if grade.feedback %}
+                            <button class="btn btn-sm btn-outline" onclick="showFeedback({{ grade.id }})">
+                                <i class="fas fa-comment"></i>
+                                View Feedback
+                            </button>
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('view_submission_details', submission_id=submission.id) }}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-eye"></i>
+                            View Details
+                        </a>
+                        {% else %}
+                        <span class="pending-grade">Pending Grade</span>
+                        <a href="{{ url_for('view_submission_details', submission_id=submission.id) }}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-eye"></i>
+                            View Details
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-upload"></i>
+                <h3>No submissions yet</h3>
+                <p>Submit your first assignment to see it here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div id="feedbackModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Assignment Feedback</h3>
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="feedbackContent"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function showFeedback(gradeId) {
+        // Fetch feedback data from the server
+        fetch(`/api/feedback/${gradeId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('feedbackContent').innerHTML = `
+                        <div class="feedback-details">
+                            <div class="feedback-header">
+                                <h4><i class="fas fa-chalkboard-teacher"></i> Assignment Feedback</h4>
+                                <div class="grade-display">
+                                    <span class="grade-score">${data.grade.marks}/${data.grade.max_marks}</span>
+                                    <span class="grade-percentage">(${data.grade.percentage}%)</span>
+                                </div>
+                            </div>
+                            <div class="feedback-content">
+                                <h5><i class="fas fa-comment-dots"></i> Instructor Comments:</h5>
+                                <div class="feedback-text">${data.grade.feedback || 'No additional feedback provided.'}</div>
+                            </div>
+                            <div class="feedback-meta">
+                                <p><i class="fas fa-calendar"></i> Graded on: ${data.grade.graded_at}</p>
+                                <p><i class="fas fa-user"></i> Graded by: ${data.grade.grader_name}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('feedbackContent').innerHTML = '<p class="error">Error loading feedback. Please try again.</p>';
+                }
+                document.getElementById('feedbackModal').style.display = 'flex';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('feedbackContent').innerHTML = '<p class="error">Error loading feedback. Please try again.</p>';
+                document.getElementById('feedbackModal').style.display = 'flex';
+            });
+    }
+    
+    function closeModal() {
+        document.getElementById('feedbackModal').style.display = 'none';
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('feedbackModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+
+<style>
+.feedback-details {
+    padding: 1rem;
+}
+
+.feedback-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.feedback-header h4 {
+    margin: 0;
+    color: var(--gray-900);
+    font-size: 1.25rem;
+}
+
+.grade-display {
+    text-align: right;
+}
+
+.grade-score {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--success-color);
+    display: block;
+}
+
+.grade-percentage {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.feedback-content {
+    margin-bottom: 1.5rem;
+}
+
+.feedback-content h5 {
+    margin: 0 0 0.75rem 0;
+    color: var(--gray-800);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feedback-text {
+    background: var(--gray-50);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary-color);
+    line-height: 1.6;
+    color: var(--gray-700);
+    white-space: pre-wrap;
+}
+
+.feedback-meta {
+    background: var(--gray-50);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.feedback-meta p {
+    margin: 0.25rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feedback-meta i {
+    color: var(--primary-color);
+    width: 16px;
+}
+
+.error {
+    color: var(--error-color);
+    text-align: center;
+    padding: 2rem;
+    font-style: italic;
+}
+</style>
+{% endblock %}

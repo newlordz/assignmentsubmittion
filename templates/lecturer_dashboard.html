@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Lecturer Dashboard - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1>Welcome, {{ current_user.first_name }}!</h1>
+            <p>Manage your assignments and grade student submissions</p>
+        </div>
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ assignments|length }}</h3>
+                    <p>My Assignments</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-file-upload"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ submissions|length }}</h3>
+                    <p>Total Submissions</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ submissions|selectattr('grades', 'none')|list|length }}</h3>
+                    <p>Pending Grades</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-actions">
+        <a href="{{ url_for('create_assignment') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            Create New Assignment
+        </a>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- My Assignments -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-clipboard-list"></i> My Assignments</h2>
+                <span class="section-count">{{ assignments|length }}</span>
+            </div>
+            
+            {% if assignments %}
+            <div class="assignments-list">
+                {% for assignment in assignments %}
+                <div class="assignment-card">
+                    <div class="assignment-header">
+                        <h3>{{ assignment.title }}</h3>
+                        <div class="assignment-meta">
+                            <span class="due-date">
+                                <i class="fas fa-calendar"></i>
+                                Due: {{ assignment.due_date.strftime('%B %d, %Y at %I:%M %p') }}
+                            </span>
+                            <span class="max-marks">
+                                <i class="fas fa-star"></i>
+                                {{ assignment.max_marks }} marks
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="assignment-content">
+                        <p>{{ assignment.description[:150] }}{% if assignment.description|length > 150 %}...{% endif %}</p>
+                        
+                        {% set assignment_submissions = submissions|selectattr('assignment_id', 'equalto', assignment.id)|list %}
+                        <div class="submission-stats">
+                            <span class="submission-count">
+                                <i class="fas fa-file-upload"></i>
+                                {{ assignment_submissions|length }} submissions
+                            </span>
+                            {% set graded_count = assignment_submissions|selectattr('grades', 'defined')|list|length %}
+                            <span class="graded-count">
+                                <i class="fas fa-check-circle"></i>
+                                {{ graded_count }} graded
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="assignment-actions">
+                        <a href="{{ url_for('edit_assignment', assignment_id=assignment.id) }}" class="btn btn-outline btn-sm">
+                            <i class="fas fa-edit"></i>
+                            Edit
+                        </a>
+                        <a href="{{ url_for('view_assignment_submissions', assignment_id=assignment.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye"></i>
+                            View Submissions
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>No assignments created</h3>
+                <p>Create your first assignment to get started.</p>
+                <a href="{{ url_for('create_assignment') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Create Assignment
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Submissions -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-file-upload"></i> Recent Submissions</h2>
+                <span class="section-count">{{ submissions|length }}</span>
+            </div>
+            
+            {% if submissions %}
+            <div class="submissions-list">
+                {% for submission in submissions[:10] %}
+                <div class="submission-card">
+                    <div class="submission-header">
+                        <h3>{{ submission.assignment.title }}</h3>
+                        <div class="submission-meta">
+                            <span class="student-name">
+                                <i class="fas fa-user"></i>
+                                {{ submission.student.first_name }} {{ submission.student.last_name }}
+                            </span>
+                            <span class="submission-date">
+                                <i class="fas fa-calendar"></i>
+                                {{ submission.submitted_at.strftime('%B %d, %Y') }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="submission-content">
+                        <div class="file-info">
+                            <i class="fas fa-file"></i>
+                            <span>{{ submission.file_name }}</span>
+                            <small>{{ "%.1f"|format(submission.file_size / 1024) }} KB</small>
+                        </div>
+                        
+                        {% if submission.is_late %}
+                        <span class="late-badge">Late Submission</span>
+                        {% endif %}
+                        
+                        {% if submission.plagiarism_score > 0 %}
+                        <div class="plagiarism-info">
+                            <i class="fas fa-search"></i>
+                            <span>Plagiarism: {{ "%.1f"|format(submission.plagiarism_score) }}%</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="submission-actions">
+                        {% set grade = submission.grades|first %}
+                        {% if grade %}
+                        <div class="grade-info">
+                            <span class="grade-score">{{ grade.marks }}/{{ submission.assignment.max_marks }}</span>
+                            <small>Graded on {{ grade.graded_at.strftime('%B %d, %Y') }}</small>
+                        </div>
+                        <a href="{{ url_for('view_submission_details', submission_id=submission.id) }}" class="btn btn-outline btn-sm">
+                            <i class="fas fa-eye"></i>
+                            View Details
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('grade_submission', submission_id=submission.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-star"></i>
+                            Grade Submission
+                        </a>
+                        <a href="{{ url_for('view_submission_details', submission_id=submission.id) }}" class="btn btn-outline btn-sm">
+                            <i class="fas fa-eye"></i>
+                            View Details
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-file-upload"></i>
+                <h3>No submissions yet</h3>
+                <p>Student submissions will appear here once they start submitting assignments.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

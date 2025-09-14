@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Assignment - {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1><i class="fas fa-edit"></i> Edit Assignment</h1>
+            <p>Update assignment details and requirements</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('view_assignment_submissions', assignment_id=assignment.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Submissions
+            </a>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" class="assignment-form">
+            <div class="form-section">
+                <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
+                
+                <div class="form-group">
+                    <label for="title">Assignment Title *</label>
+                    <input type="text" id="title" name="title" value="{{ assignment.title }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description *</label>
+                    <textarea id="description" name="description" rows="4" required>{{ assignment.description }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="instructions">Instructions</label>
+                    <textarea id="instructions" name="instructions" rows="4" placeholder="Detailed instructions for students...">{{ assignment.instructions or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2><i class="fas fa-calendar"></i> Due Date & Grading</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="due_date">Due Date & Time *</label>
+                        <input type="datetime-local" id="due_date" name="due_date" 
+                               value="{{ assignment.due_date.strftime('%Y-%m-%dT%H:%M') }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="max_marks">Maximum Marks *</label>
+                        <input type="number" id="max_marks" name="max_marks" 
+                               value="{{ assignment.max_marks }}" min="1" max="1000" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2><i class="fas fa-file"></i> File Requirements</h2>
+                
+                <div class="form-group">
+                    <label for="file_requirements">File Requirements</label>
+                    <textarea id="file_requirements" name="file_requirements" rows="3" 
+                              placeholder="e.g., PDF only, maximum 10MB, include your name in filename...">{{ assignment.file_requirements or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Update Assignment
+                </button>
+                <a href="{{ url_for('view_assignment_submissions', assignment_id=assignment.id) }}" class="btn btn-outline">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Assignment Statistics -->
+    <div class="assignment-stats">
+        <div class="stats-header">
+            <h2><i class="fas fa-chart-bar"></i> Assignment Statistics</h2>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-file-upload"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ assignment.submissions|length }}</h3>
+                    <p>Total Submissions</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ assignment.submissions|selectattr('grades', 'defined')|list|length }}</h3>
+                    <p>Graded</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ assignment.submissions|length - assignment.submissions|selectattr('grades', 'defined')|list|length }}</h3>
+                    <p>Pending</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ assignment.submissions|selectattr('is_late', 'equalto', true)|list|length }}</h3>
+                    <p>Late Submissions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.header-content h1 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-900);
+}
+
+.header-content p {
+    margin: 0;
+    color: var(--gray-600);
+}
+
+.form-container {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.assignment-form {
+    padding: 0;
+}
+
+.form-section {
+    padding: 2rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.form-section h2 {
+    margin: 0 0 1.5rem 0;
+    color: var(--gray-900);
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-actions {
+    padding: 2rem;
+    background: var(--gray-50);
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.assignment-stats {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.stats-header {
+    background: var(--gray-50);
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.stats-header h2 {
+    margin: 0;
+    color: var(--gray-900);
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+    border-right: 1px solid var(--gray-200);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.stat-card:last-child {
+    border-right: none;
+}
+
+.stat-card:nth-child(4n) {
+    border-right: none;
+}
+
+.stat-card:nth-last-child(-n+4) {
+    border-bottom: none;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.25rem;
+}
+
+.stat-content h3 {
+    margin: 0 0 0.25rem 0;
+    color: var(--gray-900);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.stat-content p {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stat-card:nth-child(2n) {
+        border-right: none;
+    }
+    
+    .stat-card:nth-last-child(-n+2) {
+        border-bottom: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        border-right: none !important;
+        border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .stat-card:last-child {
+        border-bottom: none;
+    }
+}
+</style>
+{% endblock %}

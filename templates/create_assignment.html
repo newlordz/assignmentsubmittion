@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Create Assignment - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h1><i class="fas fa-plus-circle"></i> Create New Assignment</h1>
+            <p>Set up a new assignment for your students</p>
+        </div>
+        
+        <form class="assignment-form" method="POST">
+            <div class="form-group">
+                <label for="title" class="form-label">
+                    <i class="fas fa-heading"></i>
+                    Assignment Title
+                </label>
+                <input type="text" id="title" name="title" class="form-input" required placeholder="Enter assignment title">
+            </div>
+            
+            <div class="form-group">
+                <label for="description" class="form-label">
+                    <i class="fas fa-align-left"></i>
+                    Description
+                </label>
+                <textarea id="description" name="description" class="form-textarea" rows="4" required placeholder="Describe the assignment requirements and objectives"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="instructions" class="form-label">
+                    <i class="fas fa-list-ol"></i>
+                    Instructions
+                </label>
+                <textarea id="instructions" name="instructions" class="form-textarea" rows="6" placeholder="Provide detailed instructions for completing the assignment"></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="due_date" class="form-label">
+                        <i class="fas fa-calendar"></i>
+                        Due Date & Time
+                    </label>
+                    <input type="datetime-local" id="due_date" name="due_date" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="max_marks" class="form-label">
+                        <i class="fas fa-star"></i>
+                        Maximum Marks
+                    </label>
+                    <input type="number" id="max_marks" name="max_marks" class="form-input" min="1" max="100" required placeholder="100">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="file_requirements" class="form-label">
+                    <i class="fas fa-file"></i>
+                    File Requirements
+                </label>
+                <input type="text" id="file_requirements" name="file_requirements" class="form-input" placeholder="e.g., PDF, DOC, DOCX (max 10MB)">
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('lecturer_dashboard') }}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i>
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Create Assignment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.assignment-form');
+        const dueDateInput = document.getElementById('due_date');
+        
+        // Set minimum date to current date/time
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        
+        dueDateInput.min = `${year}-${month}-${day}T${hours}:${minutes}`;
+        
+        // Form validation
+        form.addEventListener('submit', function(e) {
+            const dueDate = new Date(dueDateInput.value);
+            const now = new Date();
+            
+            if (dueDate <= now) {
+                e.preventDefault();
+                alert('Due date must be in the future.');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Assignment...';
+            submitBtn.disabled = true;
+        });
+        
+        // Character count for textareas
+        const textareas = document.querySelectorAll('.form-textarea');
+        textareas.forEach(textarea => {
+            const maxLength = textarea.getAttribute('maxlength') || 1000;
+            const counter = document.createElement('div');
+            counter.className = 'char-counter';
+            textarea.parentNode.appendChild(counter);
+            
+            function updateCounter() {
+                const remaining = maxLength - textarea.value.length;
+                counter.textContent = `${remaining} characters remaining`;
+                counter.className = `char-counter ${remaining < 50 ? 'warning' : ''}`;
+            }
+            
+            textarea.addEventListener('input', updateCounter);
+            updateCounter();
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1><i class="fas fa-cog"></i> Account Settings</h1>
+            <p>Manage your account preferences and security</p>
+        </div>
+    </div>
+    
+    <div class="dashboard-grid">
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-lock"></i> Change Password</h2>
+            </div>
+            <div class="assignments-list">
+                <form method="POST" action="{{ url_for('change_password') }}">
+                    <div class="form-group">
+                        <label for="current_password" class="form-label">
+                            <i class="fas fa-key"></i>
+                            Current Password
+                        </label>
+                        <input type="password" id="current_password" name="current_password" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new_password" class="form-label">
+                            <i class="fas fa-lock"></i>
+                            New Password
+                        </label>
+                        <input type="password" id="new_password" name="new_password" class="form-input" required minlength="6">
+                        <div class="password-strength">
+                            <div class="strength-bar">
+                                <div class="strength-fill" id="strengthFill"></div>
+                            </div>
+                            <div class="strength-text" id="strengthText">Password strength</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm_password" class="form-label">
+                            <i class="fas fa-lock"></i>
+                            Confirm New Password
+                        </label>
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-input" required minlength="6">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Change Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-bell"></i> Notification Preferences</h2>
+            </div>
+            <div class="assignments-list">
+                <form>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" checked>
+                            <span class="checkmark"></span>
+                            Email notifications for new assignments
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" checked>
+                            <span class="checkmark"></span>
+                            Email notifications for grades and feedback
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox">
+                            <span class="checkmark"></span>
+                            Email notifications for deadline reminders
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" checked>
+                            <span class="checkmark"></span>
+                            In-app notifications
+                        </label>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="alert('Notification preferences saved!')">
+                            <i class="fas fa-save"></i>
+                            Save Preferences
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-shield-alt"></i> Security</h2>
+            </div>
+            <div class="assignments-list">
+                <div class="security-item">
+                    <div class="security-info">
+                        <h4><i class="fas fa-key"></i> Password</h4>
+                        <p>Last changed: Never</p>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="document.getElementById('new_password').focus()">
+                        Change
+                    </button>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-info">
+                        <h4><i class="fas fa-mobile-alt"></i> Two-Factor Authentication</h4>
+                        <p>Add an extra layer of security</p>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="alert('2FA setup would be implemented here')">
+                        Enable
+                    </button>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-info">
+                        <h4><i class="fas fa-history"></i> Login History</h4>
+                        <p>View recent login activity</p>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="alert('Login history would be implemented here')">
+                        View
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-download"></i> Data & Privacy</h2>
+            </div>
+            <div class="assignments-list">
+                <div class="security-item">
+                    <div class="security-info">
+                        <h4><i class="fas fa-download"></i> Download My Data</h4>
+                        <p>Export all your data in a portable format</p>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="alert('Data export would be implemented here')">
+                        Download
+                    </button>
+                </div>
+                
+                <div class="security-item">
+                    <div class="security-info">
+                        <h4><i class="fas fa-trash"></i> Delete Account</h4>
+                        <p>Permanently delete your account and all data</p>
+                    </div>
+                    <button class="btn btn-outline btn-sm" style="color: var(--error-color); border-color: var(--error-color);" 
+                            onclick="alert('Account deletion would be implemented here')">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.security-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+}
+
+.security-info h4 {
+    margin: 0 0 0.25rem 0;
+    color: var(--gray-900);
+    font-size: 1rem;
+}
+
+.security-info p {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('new_password');
+        const confirmInput = document.getElementById('confirm_password');
+        const strengthFill = document.getElementById('strengthFill');
+        const strengthText = document.getElementById('strengthText');
+        
+        // Password strength checker
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            const strength = calculatePasswordStrength(password);
+            
+            strengthFill.className = 'strength-fill ' + strength.class;
+            strengthText.textContent = strength.text;
+            strengthText.className = 'strength-text ' + (strength.warning ? 'warning' : '');
+        });
+        
+        // Password confirmation checker
+        confirmInput.addEventListener('input', function() {
+            if (this.value !== passwordInput.value) {
+                this.setCustomValidity('Passwords do not match');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        function calculatePasswordStrength(password) {
+            let score = 0;
+            let text = 'Password strength';
+            let className = '';
+            let warning = false;
+            
+            if (password.length >= 6) score++;
+            if (password.length >= 8) score++;
+            if (/[a-z]/.test(password)) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+            
+            if (score < 2) {
+                text = 'Weak';
+                className = 'weak';
+                warning = true;
+            } else if (score < 4) {
+                text = 'Medium';
+                className = 'medium';
+            } else {
+                text = 'Strong';
+                className = 'strong';
+            }
+            
+            return { text, class: className, warning };
+        }
+    });
+</script>
+{% endblock %}

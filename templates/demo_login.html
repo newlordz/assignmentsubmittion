@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Login - Assignment Submission System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .demo-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        
+        .demo-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .demo-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .demo-header p {
+            font-size: 1.125rem;
+            color: var(--gray-600);
+            margin: 0;
+        }
+        
+        .demo-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .demo-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--gray-200);
+            transition: all 0.3s ease;
+        }
+        
+        .demo-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--white);
+        }
+        
+        .students-icon {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .lecturers-icon {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+        
+        .admin-icon {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0;
+        }
+        
+        .demo-accounts {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .demo-account {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .demo-account:hover {
+            background: var(--primary-color);
+            color: var(--white);
+            transform: translateX(5px);
+        }
+        
+        .account-info {
+            flex: 1;
+        }
+        
+        .account-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .account-username {
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+        
+        .login-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .demo-account:hover .login-btn {
+            background: var(--white);
+            color: var(--primary-color);
+        }
+        
+        .back-to-login {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--gray-200);
+        }
+        
+        .back-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .demo-note {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #f59e0b;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .demo-note i {
+            color: #f59e0b;
+            margin-right: 0.5rem;
+        }
+        
+        .demo-note p {
+            margin: 0;
+            color: var(--gray-700);
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .demo-sections {
+                grid-template-columns: 1fr;
+            }
+            
+            .demo-card {
+                padding: 2rem;
+            }
+            
+            .demo-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-card">
+            <div class="demo-header">
+                <h1><i class="fas fa-users"></i> Demo Login</h1>
+                <p>Click on any account below to automatically log in and test the system</p>
+            </div>
+            
+            <div class="demo-note">
+                <i class="fas fa-info-circle"></i>
+                <p>These are demo accounts for testing purposes. All passwords are pre-filled for convenience.</p>
+            </div>
+            
+            <div class="demo-sections">
+                <!-- Students Section -->
+                <div class="demo-section">
+                    <div class="section-header">
+                        <div class="section-icon students-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <h2 class="section-title">Students</h2>
+                    </div>
+                    <div class="demo-accounts">
+                        <div class="demo-account" onclick="loginAs('student1', 'student123')">
+                            <div class="account-info">
+                                <div class="account-name">John Doe</div>
+                                <div class="account-username">@student1</div>
+                            </div>
+                            <button class="login-btn">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </div>
+                        
+                        <div class="demo-account" onclick="loginAs('student2', 'student123')">
+                            <div class="account-info">
+                                <div class="account-name">Jane Smith</div>
+                                <div class="account-username">@student2</div>
+                            </div>
+                            <button class="login-btn">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </div>
+                        
+                        <div class="demo-account" onclick="loginAs('student3', 'student123')">
+                            <div class="account-info">
+                                <div class="account-name">Mike Johnson</div>
+                                <div class="account-username">@student3</div>
+                            </div>
+                            <button class="login-btn">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </div>
+                        
+                        <div class="demo-account" onclick="loginAs('student4', 'student123')">
+                            <div class="account-info">
+                                <div class="account-name">Sarah Wilson</div>
+                                <div class="account-username">@student4</div>
+                            </div>
+                            <button class="login-btn">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </div>
+                        
+                        <div class="demo-account" onclick="loginAs('student5', 'student123')">
+                            <div class="account-info">
+                                <div class="account-name">David Brown</div>
+                                <div class="account-username">@student5</div>
+                            </div>
+                            <button class="login-btn">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Lecturers Section -->
+                <div class="demo-section">
+                    <div class="section-header">
+                        <div class="section-icon lecturers-icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <h2 class="section-title">Lecturers</h2>
+                    </div>
+                    <div class="demo-accounts">
+                        <div class="demo-account" onclick="loginAs('lecturer1', 'lecturer123')">
+                            <div class="account-info">
+                                <div class="account-name">Professor Jones</div>
+                                <div class="account-username">@lecturer1</div>
+                            </div>
+                            <button class="login-btn">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </div>
+                        
+                        <div class="demo-account" onclick="loginAs('lecturer2', 'lecturer123')">
+                            <div class="account-info">
+                                <div class="account-name">Dr. Maria Garcia</div>
+                                <div class="account-username">@lecturer2</div>
+                            </div>
+                            <button class="login-btn">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </div>
+                        
+                        <div class="demo-account" onclick="loginAs('lecturer3', 'lecturer123')">
+                            <div class="account-info">
+                                <div class="account-name">Professor Lee</div>
+                                <div class="account-username">@lecturer3</div>
+                            </div>
+                            <button class="login-btn">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Admin Section -->
+                <div class="demo-section">
+                    <div class="section-header">
+                        <div class="section-icon admin-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <h2 class="section-title">Administrator</h2>
+                    </div>
+                    <div class="demo-accounts">
+                        <div class="demo-account" onclick="loginAs('admin', 'admin123')">
+                            <div class="account-info">
+                                <div class="account-name">System Administrator</div>
+                                <div class="account-username">@admin</div>
+                            </div>
+                            <button class="login-btn">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="back-to-login">
+                <a href="{{ url_for('login') }}" class="back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Regular Login
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loginAs(username, password) {
+            // Create a form and submit it to the login endpoint
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("login") }}';
+            
+            // Add username field
+            const usernameField = document.createElement('input');
+            usernameField.type = 'hidden';
+            usernameField.name = 'username';
+            usernameField.value = username;
+            form.appendChild(usernameField);
+            
+            // Add password field
+            const passwordField = document.createElement('input');
+            passwordField.type = 'hidden';
+            passwordField.name = 'password';
+            passwordField.value = password;
+            form.appendChild(passwordField);
+            
+            // Add to page and submit
+            document.body.appendChild(form);
+            form.submit();
+        }
+        
+        // Add some visual feedback
+        document.querySelectorAll('.demo-account').forEach(account => {
+            account.addEventListener('click', function() {
+                // Add a loading state
+                const btn = this.querySelector('.login-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+                btn.disabled = true;
+                
+                // Reset after a short delay (in case login fails)
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 3000);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1><i class="fas fa-cogs"></i> System Settings</h1>
+            <p>Configure system settings and manage data</p>
+        </div>
+        <div class="dashboard-actions">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <div class="dashboard-grid">
+        <!-- System Overview -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-pie"></i> System Overview</h2>
+            </div>
+            
+            <div class="settings-stats">
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ total_users }}</h3>
+                        <p>Total Users</p>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ total_assignments }}</h3>
+                        <p>Total Assignments</p>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-upload"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ total_submissions }}</h3>
+                        <p>Total Submissions</p>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ active_assignments }}</h3>
+                        <p>Active Assignments</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data Management -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-database"></i> Data Management</h2>
+            </div>
+            
+            <div class="settings-actions">
+                <div class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Create Backup</h3>
+                        <p>Create a complete backup of the system database</p>
+                        <form method="POST" action="{{ url_for('admin_backup_data') }}" style="display: inline;">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-download"></i>
+                                Create Backup
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-file-export"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Export Data</h3>
+                        <p>Export all system data to JSON format</p>
+                        <a href="{{ url_for('admin_export_data') }}" class="btn btn-outline">
+                            <i class="fas fa-file-export"></i>
+                            Export Data
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-broom"></i>
+                    </div>
+                    <div class="action-content">
+                        <h3>Cleanup Data</h3>
+                        <p>Remove old notifications and expired tokens</p>
+                        <form method="POST" action="{{ url_for('admin_cleanup_data') }}" style="display: inline;">
+                            <button type="submit" class="btn btn-warning" 
+                                    onclick="return confirm('This will permanently delete old data. Continue?')">
+                                <i class="fas fa-broom"></i>
+                                Cleanup Data
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Configuration -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-sliders-h"></i> System Configuration</h2>
+            </div>
+            
+            <div class="config-settings">
+                <div class="config-group">
+                    <h3><i class="fas fa-bell"></i> Notification Settings</h3>
+                    <div class="config-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" checked>
+                            <span class="checkmark"></span>
+                            Enable automated deadline reminders
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" checked>
+                            <span class="checkmark"></span>
+                            Send email notifications
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox">
+                            <span class="checkmark"></span>
+                            Enable SMS notifications
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="config-group">
+                    <h3><i class="fas fa-shield-alt"></i> Security Settings</h3>
+                    <div class="config-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" checked>
+                            <span class="checkmark"></span>
+                            Require strong passwords
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox">
+                            <span class="checkmark"></span>
+                            Enable two-factor authentication
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" checked>
+                            <span class="checkmark"></span>
+                            Log all user activities
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="config-group">
+                    <h3><i class="fas fa-file-upload"></i> File Upload Settings</h3>
+                    <div class="config-item">
+                        <label>Maximum file size (MB):</label>
+                        <input type="number" value="16" min="1" max="100" class="form-input" style="width: 100px;">
+                    </div>
+                    <div class="config-item">
+                        <label>Allowed file types:</label>
+                        <input type="text" value="pdf, doc, docx, txt, zip" class="form-input" style="width: 200px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Health -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-heartbeat"></i> System Health</h2>
+            </div>
+            
+            <div class="health-status">
+                <div class="health-item">
+                    <div class="health-icon status-good">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="health-content">
+                        <h3>Database Connection</h3>
+                        <p>Connected and operational</p>
+                    </div>
+                </div>
+                
+                <div class="health-item">
+                    <div class="health-icon status-good">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="health-content">
+                        <h3>File System</h3>
+                        <p>Upload directory accessible</p>
+                    </div>
+                </div>
+                
+                <div class="health-item">
+                    <div class="health-icon status-good">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="health-content">
+                        <h3>Background Tasks</h3>
+                        <p>Scheduler running normally</p>
+                    </div>
+                </div>
+                
+                <div class="health-item">
+                    <div class="health-icon status-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="health-content">
+                        <h3>Email Service</h3>
+                        <p>Not configured</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.settings-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--gray-200);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.25rem;
+}
+
+.stat-content h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.5rem;
+    color: var(--gray-900);
+}
+
+.stat-content p {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+
+.settings-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.action-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.action-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.5rem;
+}
+
+.action-content {
+    flex: 1;
+}
+
+.action-content h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-900);
+    font-size: 1.25rem;
+}
+
+.action-content p {
+    margin: 0 0 1rem 0;
+    color: var(--gray-600);
+}
+
+.config-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.config-group {
+    background: var(--gray-50);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--gray-200);
+}
+
+.config-group h3 {
+    margin: 0 0 1rem 0;
+    color: var(--gray-900);
+    font-size: 1.125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.config-item {
+    margin-bottom: 1rem;
+}
+
+.config-item:last-child {
+    margin-bottom: 0;
+}
+
+.config-item label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.health-status {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.health-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+}
+
+.health-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.status-good {
+    background: var(--success-color);
+    color: var(--white);
+}
+
+.status-warning {
+    background: var(--warning-color);
+    color: var(--white);
+}
+
+.status-error {
+    background: var(--error-color);
+    color: var(--white);
+}
+
+.health-content h3 {
+    margin: 0 0 0.25rem 0;
+    color: var(--gray-900);
+    font-size: 1rem;
+}
+
+.health-content p {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    .settings-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .config-settings {
+        gap: 1rem;
+    }
+}
+</style>
+{% endblock %}
