@@ -329,7 +329,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # Initialize database when app is created (after models are defined)
-initialize_database()
+# Note: This will be called when the app starts
 
 # Utility Functions
 def allowed_file(filename):
@@ -598,6 +598,24 @@ def student_dashboard():
                          submissions=submissions, 
                          assignments=assignments,
                          notifications=notifications)
+
+@app.route('/student/assignments')
+@login_required
+def student_assignments():
+    """Student assignments page - shows all available assignments"""
+    if current_user.role != 'student':
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get available assignments
+    assignments = Assignment.query.filter_by(is_active=True).all()
+    
+    # Get student's submissions to show status
+    submissions = Submission.query.filter_by(student_id=current_user.id).all()
+    
+    return render_template('student_assignments.html', 
+                         assignments=assignments,
+                         submissions=submissions)
 
 @app.route('/lecturer/dashboard')
 @login_required
@@ -1535,6 +1553,9 @@ def admin_assignment_report():
     except Exception as e:
         flash(f'Report generation failed: {str(e)}', 'error')
         return redirect(url_for('admin_analytics'))
+
+# Initialize database when app is created (after all models and routes are defined)
+initialize_database()
 
 if __name__ == '__main__':
     # Get port from environment variable (Railway sets this)

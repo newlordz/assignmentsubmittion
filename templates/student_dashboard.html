@@ -53,70 +53,33 @@
     {% endif %}
 
     <div class="dashboard-grid">
-        <!-- Available Assignments -->
+        <!-- Quick Actions -->
         <div class="dashboard-section">
             <div class="section-header">
-                <h2><i class="fas fa-clipboard-list"></i> Available Assignments</h2>
-                <span class="section-count">{{ assignments|length }}</span>
+                <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
             </div>
             
-            {% if assignments %}
-            <div class="assignments-list">
-                {% for assignment in assignments %}
-                <div class="assignment-card">
-                    <div class="assignment-header">
-                        <h3>{{ assignment.title }}</h3>
-                        <div class="assignment-meta">
-                            <span class="due-date">
-                                <i class="fas fa-calendar"></i>
-                                Due: {{ assignment.due_date.strftime('%B %d, %Y at %I:%M %p') }}
-                            </span>
-                            <span class="max-marks">
-                                <i class="fas fa-star"></i>
-                                {{ assignment.max_marks }} marks
-                            </span>
-                        </div>
+            <div class="quick-actions">
+                <a href="{{ url_for('student_assignments') }}" class="quick-action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-tasks"></i>
                     </div>
-                    
-                    <div class="assignment-content">
-                        <p>{{ assignment.description[:150] }}{% if assignment.description|length > 150 %}...{% endif %}</p>
-                        
-                        {% if assignment.file_requirements %}
-                        <div class="file-requirements">
-                            <i class="fas fa-file"></i>
-                            <span>{{ assignment.file_requirements }}</span>
-                        </div>
-                        {% endif %}
+                    <div class="action-content">
+                        <h3>View Assignments</h3>
+                        <p>See all available assignments and submit your work</p>
                     </div>
-                    
-                    <div class="assignment-actions">
-                        {% set user_submission = submissions|selectattr('assignment_id', 'equalto', assignment.id)|first %}
-                        {% if user_submission %}
-                            <div class="submission-status submitted">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Submitted</span>
-                                <small>{{ user_submission.submitted_at.strftime('%B %d, %Y') }}</small>
-                            </div>
-                            {% if user_submission.is_late %}
-                            <span class="late-badge">Late</span>
-                            {% endif %}
-                        {% else %}
-                            <a href="{{ url_for('submit_assignment', assignment_id=assignment.id) }}" class="btn btn-primary">
-                                <i class="fas fa-upload"></i>
-                                Submit Assignment
-                            </a>
-                        {% endif %}
+                </a>
+                
+                <a href="{{ url_for('student_dashboard') }}" class="quick-action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-history"></i>
                     </div>
-                </div>
-                {% endfor %}
+                    <div class="action-content">
+                        <h3>My Submissions</h3>
+                        <p>Track your submission history and grades</p>
+                    </div>
+                </a>
             </div>
-            {% else %}
-            <div class="empty-state">
-                <i class="fas fa-clipboard-list"></i>
-                <h3>No assignments available</h3>
-                <p>Check back later for new assignments from your lecturers.</p>
-            </div>
-            {% endif %}
         </div>
 
         <!-- My Submissions -->
@@ -348,6 +311,71 @@
     text-align: center;
     padding: 2rem;
     font-style: italic;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.quick-action-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--gray-200);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.quick-action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.action-content h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-900);
+    font-size: 1rem;
+}
+
+.action-content p {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-action-card {
+        flex-direction: column;
+        text-align: center;
+    }
 }
 </style>
 {% endblock %}

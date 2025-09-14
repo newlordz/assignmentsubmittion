@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}My Assignments - E-Assignment Submission System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="welcome-section">
+            <h1>My Assignments</h1>
+            <p>View and submit your assignments</p>
+        </div>
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ assignments|length }}</h3>
+                    <p>Available Assignments</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ submissions|length }}</h3>
+                    <p>Submissions Made</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Assignments -->
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2><i class="fas fa-clipboard-list"></i> Available Assignments</h2>
+            <span class="section-count">{{ assignments|length }}</span>
+        </div>
+        
+        {% if assignments %}
+        <div class="assignments-list">
+            {% for assignment in assignments %}
+            <div class="assignment-card">
+                <div class="assignment-header">
+                    <h3>{{ assignment.title }}</h3>
+                    <div class="assignment-meta">
+                        <span class="due-date">
+                            <i class="fas fa-calendar"></i>
+                            Due: {{ assignment.due_date.strftime('%B %d, %Y at %I:%M %p') }}
+                        </span>
+                        <span class="max-marks">
+                            <i class="fas fa-star"></i>
+                            {{ assignment.max_marks }} marks
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="assignment-content">
+                    <p>{{ assignment.description[:150] }}{% if assignment.description|length > 150 %}...{% endif %}</p>
+                    
+                    {% if assignment.file_requirements %}
+                    <div class="file-requirements">
+                        <i class="fas fa-file"></i>
+                        <span>{{ assignment.file_requirements }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if assignment.instructions %}
+                    <div class="assignment-instructions">
+                        <h4>Instructions:</h4>
+                        <p>{{ assignment.instructions[:200] }}{% if assignment.instructions|length > 200 %}...{% endif %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="assignment-actions">
+                    {% set user_submission = submissions|selectattr('assignment_id', 'equalto', assignment.id)|first %}
+                    {% if user_submission %}
+                        <div class="submission-status submitted">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Submitted</span>
+                            <small>{{ user_submission.submitted_at.strftime('%B %d, %Y') }}</small>
+                        </div>
+                        {% if user_submission.is_late %}
+                        <span class="late-badge">Late</span>
+                        {% endif %}
+                        <a href="{{ url_for('view_submission_details', submission_id=user_submission.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-eye"></i>
+                            View Details
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('submit_assignment', assignment_id=assignment.id) }}" class="btn btn-primary">
+                            <i class="fas fa-upload"></i>
+                            Submit Assignment
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-clipboard-list"></i>
+            <h3>No assignments available</h3>
+            <p>Check back later for new assignments from your lecturers.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.assignments-list {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.assignment-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--gray-200);
+    transition: all 0.3s ease;
+}
+
+.assignment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.assignment-header {
+    margin-bottom: 1rem;
+}
+
+.assignment-header h3 {
+    color: var(--gray-900);
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+}
+
+.assignment-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.assignment-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+
+.assignment-content {
+    margin-bottom: 1.5rem;
+}
+
+.assignment-content p {
+    color: var(--gray-700);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.file-requirements {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-color);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.assignment-instructions {
+    background: var(--gray-50);
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.assignment-instructions h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-900);
+    font-size: 0.875rem;
+}
+
+.assignment-instructions p {
+    margin: 0;
+    color: var(--gray-700);
+    font-size: 0.875rem;
+}
+
+.assignment-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.submission-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.submission-status.submitted {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.submission-status small {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.late-badge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-200);
+    transform: translateY(-1px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--gray-500);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--gray-700);
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    .assignment-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .assignment-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
