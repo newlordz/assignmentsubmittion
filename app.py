@@ -87,6 +87,7 @@ class Submission(db.Model):
     is_late = db.Column(db.Boolean, default=False)
     plagiarism_score = db.Column(db.Float, default=0.0)
     plagiarism_report = db.Column(db.Text, nullable=True)
+    content = db.Column(db.Text, nullable=True)  # Store file content for plagiarism detection
     
     # Relationships
     grades = db.relationship('Grade', backref='submission', lazy=True)
@@ -125,26 +126,65 @@ def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'zip', 'rar'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def read_file_content(file_path):
+    """Read file content for plagiarism detection, handling different file types"""
+    try:
+        file_extension = file_path.split('.')[-1].lower()
+        
+        if file_extension == 'txt':
+            # Read text files
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        elif file_extension in ['pdf', 'doc', 'docx', 'ppt', 'pptx']:
+            # For binary files, return a placeholder message
+            return f"Binary file detected ({file_extension.upper()}). Content analysis not available for this file type."
+        elif file_extension in ['zip', 'rar']:
+            # For archive files
+            return f"Archive file detected ({file_extension.upper()}). Content analysis not available for this file type."
+        else:
+            # Try to read as text with different encodings
+            encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+            for encoding in encodings:
+                try:
+                    with open(file_path, 'r', encoding=encoding) as f:
+                        content = f.read()
+                        # Check if content is readable text
+                        if content.isprintable() or len(content.strip()) > 0:
+                            return content
+                except:
+                    continue
+            return "Unable to read file content - unsupported file type or encoding"
+            
+    except Exception as e:
+        return f"Error reading file: {str(e)}"
+
 def calculate_plagiarism_score(content, other_submissions):
     """Calculate plagiarism score using TF-IDF and cosine similarity"""
-    if not other_submissions:
+    if not other_submissions or not content:
         return 0.0
     
-    # Prepare documents
-    documents = [content] + [sub.content for sub in other_submissions if sub.content]
+    # Prepare documents - filter out empty or invalid content
+    documents = [content]
+    for sub in other_submissions:
+        if hasattr(sub, 'content') and sub.content and len(sub.content.strip()) > 10:
+            documents.append(sub.content)
     
     if len(documents) < 2:
         return 0.0
     
-    # Vectorize documents
-    vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = vectorizer.fit_transform(documents)
-    
-    # Calculate cosine similarity
-    similarity_scores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
-    
-    # Return maximum similarity score
-    return float(np.max(similarity_scores)) * 100
+    try:
+        # Vectorize documents
+        vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
+        tfidf_matrix = vectorizer.fit_transform(documents)
+        
+        # Calculate cosine similarity
+        similarity_scores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
+        
+        # Return maximum similarity score
+        return float(np.max(similarity_scores)) * 100
+    except Exception as e:
+        print(f"Error in plagiarism calculation: {e}")
+        return 0.0
 
 def send_notification(user_id, title, message, notification_type):
     """Send notification to user"""
@@ -461,6 +501,9 @@ def submit_assignment(assignment_id):
             # Check if submission is late
             is_late = datetime.utcnow() > assignment.due_date
             
+            # Read file content for plagiarism detection
+            file_content = read_file_content(file_path)
+            
             # Create submission record
             submission = Submission(
                 assignment_id=assignment_id,
@@ -468,7 +511,8 @@ def submit_assignment(assignment_id):
                 file_path=file_path,
                 file_name=file.filename,
                 file_size=os.path.getsize(file_path),
-                is_late=is_late
+                is_late=is_late,
+                content=file_content if len(file_content) < 10000 else file_content[:10000]  # Limit content size
             )
             
             db.session.add(submission)
@@ -607,33 +651,59 @@ def edit_assignment(assignment_id):
 @app.route('/api/plagiarism-check/<int:submission_id>')
 @login_required
 def plagiarism_check(submission_id):
-    submission = Submission.query.get_or_404(submission_id)
-    
-    # Read file content (simplified - in real implementation, you'd parse different file types)
     try:
-        with open(submission.file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-    except:
-        content = "Unable to read file content"
-    
-    # Get other submissions for comparison
-    other_submissions = Submission.query.filter(
-        Submission.assignment_id == submission.assignment_id,
-        Submission.id != submission_id
-    ).all()
-    
-    # Calculate plagiarism score
-    plagiarism_score = calculate_plagiarism_score(content, other_submissions)
-    
-    # Update submission record
-    submission.plagiarism_score = plagiarism_score
-    submission.plagiarism_report = f"Plagiarism score: {plagiarism_score:.2f}%"
-    db.session.commit()
-    
-    return jsonify({
-        'plagiarism_score': plagiarism_score,
-        'report': submission.plagiarism_report
-    })
+        submission = Submission.query.get_or_404(submission_id)
+        
+        # Use stored content or read from file
+        content = submission.content or read_file_content(submission.file_path)
+        
+        # Check if content is readable for plagiarism detection
+        if not content or "Binary file detected" in content or "Archive file detected" in content or "Unable to read" in content:
+            submission.plagiarism_score = 0.0
+            submission.plagiarism_report = f"Plagiarism check skipped: {content or 'No content available'}"
+            db.session.commit()
+            
+            return jsonify({
+                'plagiarism_score': 0.0,
+                'report': submission.plagiarism_report,
+                'status': 'skipped',
+                'reason': content or 'No content available'
+            })
+        
+        # Get other submissions for comparison
+        other_submissions = Submission.query.filter(
+            Submission.assignment_id == submission.assignment_id,
+            Submission.id != submission_id
+        ).all()
+        
+        # Use stored content from other submissions
+        other_contents = []
+        for other_sub in other_submissions:
+            other_content = other_sub.content or read_file_content(other_sub.file_path)
+            if other_content and not any(msg in other_content for msg in ["Binary file detected", "Archive file detected", "Unable to read"]):
+                other_contents.append(other_content)
+        
+        # Calculate plagiarism score
+        plagiarism_score = calculate_plagiarism_score(content, other_contents)
+        
+        # Update submission record
+        submission.plagiarism_score = plagiarism_score
+        submission.plagiarism_report = f"Plagiarism score: {plagiarism_score:.2f}%"
+        db.session.commit()
+        
+        return jsonify({
+            'plagiarism_score': plagiarism_score,
+            'report': submission.plagiarism_report,
+            'status': 'success'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'Plagiarism check failed: {str(e)}',
+            'plagiarism_score': 0.0,
+            'report': 'Plagiarism check failed due to an error',
+            'status': 'error'
+        }), 500
 
 # Password Reset Routes
 @app.route('/forgot-password', methods=['GET', 'POST'])
