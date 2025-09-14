@@ -101,10 +101,155 @@ def initialize_database():
                 db.session.commit()
                 print("✅ Demo accounts created successfully!")
             
+            # Create demo assignments and submissions if they don't exist
+            existing_assignment = Assignment.query.filter_by(title='Introduction to Programming').first()
+            if not existing_assignment:
+                print("🚀 Creating demo assignments and submissions...")
+                create_demo_assignments_and_submissions()
+                print("✅ Demo assignments and submissions created successfully!")
+            
         except Exception as e:
             print(f"❌ Database initialization error: {e}")
             import traceback
             traceback.print_exc()
+
+def create_demo_assignments_and_submissions():
+    """Create demo assignments and submissions"""
+    try:
+        # Get demo users
+        lecturer1 = User.query.filter_by(username='lecturer1').first()
+        lecturer2 = User.query.filter_by(username='lecturer2').first()
+        students = User.query.filter_by(role='student').all()
+        
+        if not lecturer1 or not students:
+            return
+        
+        # Create sample assignments
+        assignments_data = [
+            {
+                'title': 'Introduction to Programming',
+                'description': 'Write a simple Python program that calculates the factorial of a number.',
+                'instructions': 'Create a Python script that:\n1. Takes a number as input\n2. Calculates its factorial\n3. Displays the result\n\nSubmit your .py file.',
+                'due_date': datetime.utcnow() + timedelta(days=7),
+                'max_marks': 100,
+                'file_requirements': 'Python files (.py)',
+                'created_by': lecturer1.id
+            },
+            {
+                'title': 'Web Development Project',
+                'description': 'Create a simple HTML/CSS website with at least 3 pages.',
+                'instructions': 'Build a personal portfolio website with:\n1. Home page\n2. About page\n3. Contact page\n\nInclude CSS styling and make it responsive.',
+                'due_date': datetime.utcnow() + timedelta(days=14),
+                'max_marks': 150,
+                'file_requirements': 'HTML, CSS files',
+                'created_by': lecturer1.id
+            },
+            {
+                'title': 'Database Design Assignment',
+                'description': 'Design a database schema for a library management system.',
+                'instructions': 'Create an ER diagram and SQL schema for:\n1. Books table\n2. Members table\n3. Borrowing records\n\nSubmit the SQL file and ER diagram.',
+                'due_date': datetime.utcnow() + timedelta(days=10),
+                'max_marks': 120,
+                'file_requirements': 'SQL files, images',
+                'created_by': lecturer2.id if lecturer2 else lecturer1.id
+            }
+        ]
+        
+        sample_files = {
+            'factorial.py': '''def factorial(n):
+    if n == 0 or n == 1:
+        return 1
+    else:
+        return n * factorial(n - 1)
+
+# Test the function
+number = int(input("Enter a number: "))
+result = factorial(number)
+print(f"The factorial of {number} is {result}")''',
+            
+            'index.html': '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Welcome to My Portfolio</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Hello, I'm a Web Developer</h2>
+        <p>This is my portfolio website showcasing my projects and skills.</p>
+    </main>
+</body>
+</html>''',
+            
+            'library_schema.sql': '''-- Library Management System Database Schema
+
+CREATE TABLE books (
+    book_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    author VARCHAR(255) NOT NULL,
+    isbn VARCHAR(20) UNIQUE,
+    publication_year INT,
+    available_copies INT DEFAULT 1
+);
+
+CREATE TABLE members (
+    member_id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    phone VARCHAR(20),
+    join_date DATE DEFAULT CURRENT_DATE
+);
+
+CREATE TABLE borrowing_records (
+    record_id INT PRIMARY KEY AUTO_INCREMENT,
+    member_id INT,
+    book_id INT,
+    borrow_date DATE DEFAULT CURRENT_DATE,
+    return_date DATE,
+    due_date DATE,
+    FOREIGN KEY (member_id) REFERENCES members(member_id),
+    FOREIGN KEY (book_id) REFERENCES books(book_id)
+);'''
+        }
+        
+        # Create assignments
+        for i, assignment_data in enumerate(assignments_data):
+            assignment = Assignment(**assignment_data)
+            db.session.add(assignment)
+            db.session.flush()  # Get the ID
+            
+            # Create submissions for first 3 students
+            filename = list(sample_files.keys())[i]
+            content = list(sample_files.values())[i]
+            
+            for j, student in enumerate(students[:3]):
+                submission = Submission(
+                    assignment_id=assignment.id,
+                    student_id=student.id,
+                    file_path=f'static/uploads/demo_{filename}',
+                    file_name=filename,
+                    file_size=len(content),
+                    is_late=datetime.utcnow() > assignment.due_date,
+                    content=content
+                )
+                db.session.add(submission)
+        
+        db.session.commit()
+        
+    except Exception as e:
+        print(f"Error creating demo assignments: {e}")
+        db.session.rollback()
 
 # Database Models
 class User(UserMixin, db.Model):
