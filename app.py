@@ -50,7 +50,7 @@ app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in [
 app.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'false').lower() in ['true', 'on', '1']
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'your_email@gmail.com')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'your_app_password')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'your_email@gmail.com')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'E-Assignment.edu.gh <enochessel5@gmail.com>')
 app.config['MAIL_SUPPRESS_SEND'] = os.environ.get('MAIL_SUPPRESS_SEND', 'false').lower() in ['true', 'on', '1']
 
 # SendGrid Configuration
@@ -665,10 +665,15 @@ def send_email_flask_mail(to_email, subject, html_content):
             print(f"⚠️ Email not configured: {subject} to {to_email}")
             return False
             
+        # Use proper sender format with name
+        sender = app.config['MAIL_DEFAULT_SENDER']
+        if not sender.startswith('E-Assignment.edu.gh'):
+            sender = f"E-Assignment.edu.gh <{app.config['MAIL_USERNAME']}>"
+        
         msg = Message(
             subject=subject,
             recipients=[to_email],
-            sender=app.config['MAIL_DEFAULT_SENDER']
+            sender=sender
         )
         
         msg.html = html_content
