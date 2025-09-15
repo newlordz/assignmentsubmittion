@@ -26,6 +26,8 @@ from email.mime.multipart import MIMEMultipart
 import threading
 import time
 import shutil
+import requests
+import json
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # Load environment variables from .env file
@@ -57,6 +59,11 @@ app.config['MAIL_SUPPRESS_SEND'] = os.environ.get('MAIL_SUPPRESS_SEND', 'false')
 app.config['SENDGRID_API_KEY'] = os.environ.get('SENDGRID_API_KEY', '')
 app.config['SENDGRID_FROM_EMAIL'] = os.environ.get('SENDGRID_FROM_EMAIL', 'noreply@university.edu')
 app.config['USE_SENDGRID'] = os.environ.get('USE_SENDGRID', 'false').lower() in ['true', 'on', '1']
+
+# PlagiarismCheck.org API Configuration
+app.config['PLAGIARISM_CHECK_API_TOKEN'] = os.environ.get('PLAGIARISM_CHECK_API_TOKEN', '')
+app.config['PLAGIARISM_CHECK_API_URL'] = 'https://plagiarismcheck.org/api/org/text/check/'
+app.config['USE_PLAGIARISM_CHECK_API'] = os.environ.get('USE_PLAGIARISM_CHECK_API', 'false').lower() in ['true', 'on', '1']
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -563,6 +570,81 @@ def read_file_content(file_path):
             
     except Exception as e:
         return f"Error reading file: {str(e)}"
+
+def check_plagiarism_with_api(content, author_email, author_name=None):
+    """Check plagiarism using PlagiarismCheck.org API"""
+    try:
+        if not app.config['USE_PLAGIARISM_CHECK_API'] or not app.config['PLAGIARISM_CHECK_API_TOKEN']:
+            print("⚠️ PlagiarismCheck.org API not configured, falling back to local check")
+            return None
+        
+        # Prepare API request data
+        data = {
+            'group_token': app.config['PLAGIARISM_CHECK_API_TOKEN'],
+            'author': author_email,
+            'text': content
+        }
+        
+        if author_name:
+            data['custom_author'] = author_name
+        
+        # Make API request
+        response = requests.post(
+            app.config['PLAGIARISM_CHECK_API_URL'],
+            data=data,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'check_id' in result:
+                print(f"✅ Plagiarism check submitted successfully. Check ID: {result['check_id']}")
+                return {
+                    'check_id': result['check_id'],
+                    'status': 'submitted',
+                    'message': 'Plagiarism check submitted successfully'
+                }
+            else:
+                print(f"❌ API response error: {result}")
+                return None
+        else:
+            print(f"❌ API request failed with status {response.status_code}: {response.text}")
+            return None
+            
+    except requests.exceptions.Timeout:
+        print("❌ PlagiarismCheck.org API request timed out")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"❌ PlagiarismCheck.org API request failed: {e}")
+        return None
+    except Exception as e:
+        print(f"❌ Unexpected error in plagiarism API check: {e}")
+        return None
+
+def get_plagiarism_report(check_id):
+    """Get plagiarism report from PlagiarismCheck.org API"""
+    try:
+        if not app.config['USE_PLAGIARISM_CHECK_API'] or not app.config['PLAGIARISM_CHECK_API_TOKEN']:
+            return None
+        
+        # API endpoint for getting report
+        report_url = f"https://plagiarismcheck.org/api/org/text/report/{check_id}/"
+        
+        headers = {
+            'Authorization': f"Token {app.config['PLAGIARISM_CHECK_API_TOKEN']}"
+        }
+        
+        response = requests.get(report_url, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"❌ Failed to get plagiarism report: {response.status_code}")
+            return None
+            
+    except Exception as e:
+        print(f"❌ Error getting plagiarism report: {e}")
+        return None
 
 def calculate_plagiarism_score(content, other_submissions):
     """Calculate plagiarism score using TF-IDF and cosine similarity"""
@@ -1480,6 +1562,33 @@ def plagiarism_check(submission_id):
                 'reason': content or 'No content available'
             })
         
+        # Try PlagiarismCheck.org API first
+        if app.config['USE_PLAGIARISM_CHECK_API'] and app.config['PLAGIARISM_CHECK_API_TOKEN']:
+            # Get student information
+            student = submission.student
+            author_email = student.email
+            author_name = f"{student.first_name} {student.last_name}"
+            
+            # Submit to PlagiarismCheck.org API
+            api_result = check_plagiarism_with_api(content, author_email, author_name)
+            
+            if api_result and 'check_id' in api_result:
+                # Store the check ID for later retrieval
+                submission.plagiarism_report = f"Plagiarism check submitted to PlagiarismCheck.org API. Check ID: {api_result['check_id']}"
+                submission.plagiarism_score = 0.0  # Will be updated when report is retrieved
+                db.session.commit()
+                
+                return jsonify({
+                    'plagiarism_score': 0.0,
+                    'report': submission.plagiarism_report,
+                    'check_id': api_result['check_id'],
+                    'status': 'submitted_to_api',
+                    'message': 'Plagiarism check submitted to professional service. Report will be available shortly.'
+                })
+        
+        # Fallback to local plagiarism check
+        print("Using local plagiarism detection as fallback")
+        
         # Get other submissions for comparison
         other_submissions = Submission.query.filter(
             Submission.assignment_id == submission.assignment_id,
@@ -1509,7 +1618,7 @@ def plagiarism_check(submission_id):
         return jsonify({
             'plagiarism_score': plagiarism_score,
             'report': submission.plagiarism_report,
-            'status': 'success'
+            'status': 'completed_local'
         })
         
     except Exception as e:
@@ -1517,6 +1626,37 @@ def plagiarism_check(submission_id):
             'error': f'Plagiarism check failed: {str(e)}',
             'plagiarism_score': 0.0,
             'report': 'Plagiarism check failed due to an error',
+            'status': 'error'
+        }), 500
+
+@app.route('/api/plagiarism-report/<check_id>')
+@login_required
+def get_plagiarism_report_route(check_id):
+    """Get plagiarism report from PlagiarismCheck.org API"""
+    try:
+        if not app.config['USE_PLAGIARISM_CHECK_API'] or not app.config['PLAGIARISM_CHECK_API_TOKEN']:
+            return jsonify({
+                'error': 'PlagiarismCheck.org API not configured',
+                'status': 'error'
+            }), 400
+        
+        # Get report from API
+        report = get_plagiarism_report(check_id)
+        
+        if report:
+            return jsonify({
+                'report': report,
+                'status': 'success'
+            })
+        else:
+            return jsonify({
+                'error': 'Failed to retrieve plagiarism report',
+                'status': 'error'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'error': f'Error retrieving plagiarism report: {str(e)}',
             'status': 'error'
         }), 500
 
