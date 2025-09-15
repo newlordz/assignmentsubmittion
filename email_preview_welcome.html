@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to E-Assignment Submission System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .welcome-title {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .user-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info-item {
+            margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .cta-button:hover {
+            background-color: #0056b3;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .features {
+            margin: 20px 0;
+        }
+        .feature-item {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .feature-item::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">📚 E-Assignment System</div>
+            <h1 class="welcome-title">Welcome, John!</h1>
+        </div>
+        
+        <div class="content">
+            <p>Thank you for joining the E-Assignment Submission System! We're excited to have you as part of our academic community.</p>
+            
+            <div class="user-info">
+                <h3>Your Account Details:</h3>
+                <div class="info-item">
+                    <span class="info-label">Name:</span> John Doe
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Username:</span> johndoe
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span> john.doe@university.edu
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Role:</span> {{ user.role.title() }}
+                </div>
+            </div>
+            
+            <h3>What you can do:</h3>
+            <div class="features">
+                <!-- if user.role == 'student'  -->
+                <div class="feature-item">Submit assignments online</div>
+                <div class="feature-item">Track your submission history</div>
+                <div class="feature-item">Receive grade notifications</div>
+                <div class="feature-item">View assignment deadlines</div>
+                {% elif user.role == 'lecturer' %}
+                <div class="feature-item">Create and manage assignments</div>
+                <div class="feature-item">Grade student submissions</div>
+                <div class="feature-item">Track submission analytics</div>
+                <div class="feature-item">Send feedback to students</div>
+                {% elif user.role == 'admin' %}
+                <div class="feature-item">Manage all users and assignments</div>
+                <div class="feature-item">View system analytics</div>
+                <div class="feature-item">Generate reports</div>
+                <div class="feature-item">Configure system settings</div>
+                <!-- endif -->
+            </div>
+            
+            <p>Ready to get started? Click the button below to access your dashboard:</p>
+            
+            <div style="text-align: center;">
+                <a href="https://your-university.edu/dashboard" class="cta-button">Access Dashboard</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+            <p><strong>E-Assignment Submission System</strong><br>
+            Academic Excellence Through Technology</p>
+        </div>
+    </div>
+</body>
+</html>

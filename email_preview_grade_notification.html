@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Posted</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #ffc107;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffc107;
+            margin-bottom: 10px;
+        }
+        .grade-title {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .grade-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .detail-item {
+            margin-bottom: 15px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+            display: inline-block;
+            width: 120px;
+        }
+        .grade-display {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .grade-score {
+            font-size: 36px;
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .grade-out-of {
+            font-size: 18px;
+            color: #856404;
+        }
+        .feedback-section {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .assignment-info {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #ffc107;
+            color: #212529;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .cta-button:hover {
+            background-color: #e0a800;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .performance-indicator {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .excellent {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .good {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        .average {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .needs-improvement {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">🎓 Grade Posted</div>
+            <h1 class="grade-title">Introduction to Programming</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hello John,</p>
+            <p>Great news! Your assignment has been graded and your results are now available.</p>
+            
+            <div class="grade-display">
+                <div class="grade-score">85</div>
+                <div class="grade-out-of">out of 100 marks</div>
+            </div>
+            
+            {% set percentage = (grade.marks / assignment.max_marks * 100) %}
+            <!-- if percentage >= 90  -->
+            <div class="performance-indicator excellent">
+                🌟 Excellent Work! Outstanding performance!
+            </div>
+            {% elif percentage >= 80 %}
+            <div class="performance-indicator good">
+                👍 Great Job! Well done!
+            </div>
+            {% elif percentage >= 70 %}
+            <div class="performance-indicator average">
+                📚 Good Work! Keep it up!
+            </div>
+            <!-- else -->
+            <div class="performance-indicator needs-improvement">
+                📖 Keep Learning! There's room for improvement.
+            </div>
+            <!-- endif -->
+            
+            <div class="grade-details">
+                <h3>Grade Details:</h3>
+                <div class="detail-item">
+                    <span class="detail-label">Assignment:</span> Introduction to Programming
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Marks Obtained:</span> 85/100
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Percentage:</span> {{ "%.1f"|format(percentage) }}%
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Graded On:</span> September 15, 2025 at 11:34 AM
+                </div>
+            </div>
+            
+            <!-- if grade.feedback  -->
+            <div class="feedback-section">
+                <h4>📝 Instructor Feedback:</h4>
+                <p>Great work! Your code is well-structured and handles edge cases properly.</p>
+            </div>
+            <!-- endif -->
+            
+            <div class="assignment-info">
+                <h4>📋 Assignment Information:</h4>
+                <div class="detail-item">
+                    <span class="detail-label">Due Date:</span> September 15, 2025 at 11:34 AM
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Description:</span> Write a simple Python program that calculates the factorial of a number.
+                </div>
+            </div>
+            
+            <p>You can view detailed feedback and download your graded submission from your dashboard.</p>
+            
+            <div style="text-align: center;">
+                <a href="https://your-university.edu/student/dashboard" class="cta-button">View Dashboard</a>
+            </div>
+            
+            <p>Keep up the great work and continue striving for academic excellence!</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated notification from the E-Assignment Submission System.</p>
+            <p>If you have any questions about your grade, please contact your instructor.</p>
+        </div>
+    </div>
+</body>
+</html>

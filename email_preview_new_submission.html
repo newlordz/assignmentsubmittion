@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Submission Received</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .submission-title {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .submission-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .detail-item {
+            margin-bottom: 15px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+            display: inline-block;
+            width: 120px;
+        }
+        .student-info {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .submission-info {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .late-badge {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .on-time-badge {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .cta-button:hover {
+            background-color: #0056b3;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">📤 New Submission</div>
+            <h1 class="submission-title">Introduction to Programming</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hello Dr. Smith,</p>
+            <p>A student has submitted their assignment and it's ready for your review!</p>
+            
+            <div class="student-info">
+                <h4>👨‍🎓 Student Information:</h4>
+                <div class="detail-item">
+                    <span class="detail-label">Name:</span> John Doe
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Email:</span> john.doe@university.edu
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Username:</span> johndoe
+                </div>
+            </div>
+            
+            <div class="submission-details">
+                <h3>Submission Details:</h3>
+                <div class="detail-item">
+                    <span class="detail-label">Assignment:</span> Introduction to Programming
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">File Name:</span> factorial.py
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">File Size:</span> {{ "%.2f"|format(submission.file_size / 1024) }} KB
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Submitted:</span> September 15, 2025 at 11:34 AM
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status:</span> 
+                    <!-- if submission.is_late  -->
+                        <span class="late-badge">Late Submission</span>
+                    <!-- else -->
+                        <span class="on-time-badge">On Time</span>
+                    <!-- endif -->
+                </div>
+            </div>
+            
+            <div class="submission-info">
+                <h4>📋 Assignment Information:</h4>
+                <div class="detail-item">
+                    <span class="detail-label">Due Date:</span> September 15, 2025 at 11:34 AM
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Max Marks:</span> 100
+                </div>
+                <!-- if assignment.file_requirements  -->
+                <div class="detail-item">
+                    <span class="detail-label">Requirements:</span> Python files (.py)
+                </div>
+                <!-- endif -->
+            </div>
+            
+            <p>Please review the submission and provide feedback and grades as soon as possible.</p>
+            
+            <div style="text-align: center;">
+                <a href="https://your-university.edu/submission/grade/1" class="cta-button">Review & Grade</a>
+            </div>
+            
+            <p>You can also view all submissions for this assignment in your dashboard.</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated notification from the E-Assignment Submission System.</p>
+            <p>Please review and grade submissions promptly to provide timely feedback to students.</p>
+        </div>
+    </div>
+</body>
+</html>

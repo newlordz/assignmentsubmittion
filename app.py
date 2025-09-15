@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_mail import Mail, Message
+import sendgrid
+from sendgrid.helpers.mail import Mail as SendGridMail, Email, To, Content
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -42,6 +44,11 @@ app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@university.edu')
 app.config['MAIL_SUPPRESS_SEND'] = os.environ.get('MAIL_SUPPRESS_SEND', 'false').lower() in ['true', 'on', '1']
+
+# SendGrid Configuration
+app.config['SENDGRID_API_KEY'] = os.environ.get('SENDGRID_API_KEY', '')
+app.config['SENDGRID_FROM_EMAIL'] = os.environ.get('SENDGRID_FROM_EMAIL', 'noreply@university.edu')
+app.config['USE_SENDGRID'] = os.environ.get('USE_SENDGRID', 'false').lower() in ['true', 'on', '1']
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -420,12 +427,59 @@ def send_notification(user_id, title, message, notification_type):
     db.session.commit()
 
 def send_email(to_email, subject, template, **kwargs):
-    """Send email using Flask-Mail"""
+    """Send email using SendGrid or Flask-Mail"""
     try:
         if app.config['MAIL_SUPPRESS_SEND']:
             print(f"📧 Email suppressed: {subject} to {to_email}")
             return True
-            
+        
+        # Render email template
+        html_content = render_template(f'emails/{template}', **kwargs)
+        
+        # Use SendGrid if configured
+        if app.config['USE_SENDGRID'] and app.config['SENDGRID_API_KEY']:
+            return send_email_sendgrid(to_email, subject, html_content)
+        
+        # Fallback to Flask-Mail
+        return send_email_flask_mail(to_email, subject, html_content)
+        
+    except Exception as e:
+        print(f"❌ Email failed: {e}")
+        return False
+
+def send_email_sendgrid(to_email, subject, html_content):
+    """Send email using SendGrid API"""
+    try:
+        sg = sendgrid.SendGridAPIClient(api_key=app.config['SENDGRID_API_KEY'])
+        
+        from_email = Email(app.config['SENDGRID_FROM_EMAIL'])
+        to_email_obj = To(to_email)
+        content = Content("text/html", html_content)
+        
+        mail = SendGridMail(from_email, to_email_obj, subject, content)
+        
+        # Send email in background thread
+        def send_async_sendgrid():
+            try:
+                response = sg.send(mail)
+                print(f"📧 SendGrid email sent: {subject} to {to_email} (Status: {response.status_code})")
+                return True
+            except Exception as e:
+                print(f"❌ SendGrid email failed: {e}")
+                return False
+        
+        thread = threading.Thread(target=send_async_sendgrid)
+        thread.start()
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ SendGrid setup failed: {e}")
+        return False
+
+def send_email_flask_mail(to_email, subject, html_content):
+    """Send email using Flask-Mail (fallback)"""
+    try:
         if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
             print(f"⚠️ Email not configured: {subject} to {to_email}")
             return False
@@ -436,8 +490,7 @@ def send_email(to_email, subject, template, **kwargs):
             sender=app.config['MAIL_DEFAULT_SENDER']
         )
         
-        # Render email template
-        msg.html = render_template(f'emails/{template}', **kwargs)
+        msg.html = html_content
         
         # Send email in background thread
         def send_async_email(app, msg):
@@ -447,11 +500,11 @@ def send_email(to_email, subject, template, **kwargs):
         thread = threading.Thread(target=send_async_email, args=(app, msg))
         thread.start()
         
-        print(f"📧 Email sent: {subject} to {to_email}")
+        print(f"📧 Flask-Mail email sent: {subject} to {to_email}")
         return True
         
     except Exception as e:
-        print(f"❌ Email failed: {e}")
+        print(f"❌ Flask-Mail failed: {e}")
         return False
 
 def send_assignment_notification(assignment, students):
