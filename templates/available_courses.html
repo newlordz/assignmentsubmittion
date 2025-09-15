@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Available Courses{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Available Courses</h2>
+                <a href="{{ url_for('enroll_course') }}" class="btn btn-primary">Enroll with Code</a>
+            </div>
+            
+            {% if courses %}
+                <div class="row">
+                    {% for course in courses %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ course.name }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ course.code }}</h6>
+                                <p class="card-text">{{ course.description or 'No description available.' }}</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <strong>Lecturer:</strong> {{ course.lecturer.first_name }} {{ course.lecturer.last_name }}
+                                    </small>
+                                </p>
+                            </div>
+                            <div class="card-footer">
+                                <form method="POST" action="{{ url_for('enroll_course') }}" class="d-inline">
+                                    <input type="hidden" name="course_code" value="{{ course.code }}">
+                                    <button type="submit" class="btn btn-success btn-sm">Enroll</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <h4>No Available Courses</h4>
+                    <p>There are no courses available for enrollment at the moment.</p>
+                    <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -12,6 +12,19 @@
         
         <form class="assignment-form" method="POST">
             <div class="form-group">
+                <label for="course_id" class="form-label">
+                    <i class="fas fa-graduation-cap"></i>
+                    Course
+                </label>
+                <select id="course_id" name="course_id" class="form-input" required>
+                    <option value="">Select a course</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
                 <label for="title" class="form-label">
                     <i class="fas fa-heading"></i>
                     Assignment Title

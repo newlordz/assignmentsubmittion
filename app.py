@@ -40,9 +40,9 @@ app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
 app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
 app.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'false').lower() in ['true', 'on', '1']
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@university.edu')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'your_email@gmail.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'your_app_password')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'your_email@gmail.com')
 app.config['MAIL_SUPPRESS_SEND'] = os.environ.get('MAIL_SUPPRESS_SEND', 'false').lower() in ['true', 'on', '1']
 
 # SendGrid Configuration
@@ -120,6 +120,13 @@ def initialize_database():
                 db.session.commit()
                 print("✅ Demo accounts created successfully!")
             
+            # Create demo courses if they don't exist
+            existing_course = Course.query.first()
+            if not existing_course:
+                print("🚀 Creating demo courses...")
+                create_demo_courses()
+                print("✅ Demo courses created successfully!")
+            
             # Create demo assignments and submissions if they don't exist
             existing_assignment = Assignment.query.filter_by(title='Introduction to Programming').first()
             if not existing_assignment:
@@ -132,15 +139,131 @@ def initialize_database():
             import traceback
             traceback.print_exc()
 
+def create_demo_courses():
+    """Create demo classes and courses, enroll students"""
+    try:
+        # Get admin and lecturers
+        admin = User.query.filter_by(username='admin').first()
+        lecturer1 = User.query.filter_by(username='lecturer1').first()
+        lecturer2 = User.query.filter_by(username='lecturer2').first()
+        
+        if not admin or not lecturer1 or not lecturer2:
+            print("❌ Demo users not found")
+            return
+        
+        # Create demo classes (admin creates classes)
+        demo_classes = [
+            {
+                'name': 'Computer Science Year 1',
+                'code': 'CS1A',
+                'description': 'First year computer science students',
+                'created_by': admin.id
+            },
+            {
+                'name': 'Computer Science Year 2',
+                'code': 'CS2A',
+                'description': 'Second year computer science students',
+                'created_by': admin.id
+            }
+        ]
+        
+        created_classes = []
+        for class_data in demo_classes:
+            # Check if class already exists
+            existing_class = Class.query.filter_by(code=class_data['code']).first()
+            if not existing_class:
+                new_class = Class(**class_data)
+                db.session.add(new_class)
+                db.session.flush()  # Get the class ID
+                created_classes.append(new_class)
+            else:
+                created_classes.append(existing_class)
+        
+        # Create demo courses
+        courses = [
+            {
+                'name': 'Introduction to Programming',
+                'code': 'CS101',
+                'description': 'Learn the fundamentals of programming with Python',
+                'lecturer_id': lecturer1.id,
+                'class_id': created_classes[0].id
+            },
+            {
+                'name': 'Web Development',
+                'code': 'CS201',
+                'description': 'Build modern web applications with HTML, CSS, and JavaScript',
+                'lecturer_id': lecturer1.id,
+                'class_id': created_classes[0].id
+            },
+            {
+                'name': 'Database Systems',
+                'code': 'CS301',
+                'description': 'Design and implement database systems',
+                'lecturer_id': lecturer2.id,
+                'class_id': created_classes[1].id
+            },
+            {
+                'name': 'Software Engineering',
+                'code': 'CS401',
+                'description': 'Software development methodologies and best practices',
+                'lecturer_id': lecturer2.id,
+                'class_id': created_classes[1].id
+            }
+        ]
+        
+        created_courses = []
+        for course_data in courses:
+            # Check if course already exists
+            existing_course = Course.query.filter_by(code=course_data['code']).first()
+            if not existing_course:
+                course = Course(**course_data)
+                db.session.add(course)
+                created_courses.append(course)
+            else:
+                created_courses.append(existing_course)
+        
+        db.session.commit()
+        
+        # Assign students to classes and enroll them in courses
+        students = User.query.filter_by(role='student').all()
+        if students:
+            mid_point = len(students) // 2
+            for i, student in enumerate(students):
+                if i < mid_point:
+                    student.class_id = created_classes[0].id
+                    # Enroll in courses for class 1
+                    for course in created_courses[:2]:
+                        if course not in student.enrolled_courses:
+                            course.students.append(student)
+                else:
+                    student.class_id = created_classes[1].id
+                    # Enroll in courses for class 2
+                    for course in created_courses[2:]:
+                        if course not in student.enrolled_courses:
+                            course.students.append(student)
+        
+        db.session.commit()
+        print("✅ Demo classes and courses created successfully!")
+        
+    except Exception as e:
+        print(f"❌ Error creating demo classes and courses: {e}")
+        db.session.rollback()
+
 def create_demo_assignments_and_submissions():
     """Create demo assignments and submissions"""
     try:
-        # Get demo users
+        # Get demo users and courses
         lecturer1 = User.query.filter_by(username='lecturer1').first()
         lecturer2 = User.query.filter_by(username='lecturer2').first()
         students = User.query.filter_by(role='student').all()
         
-        if not lecturer1 or not students:
+        # Get courses
+        cs101 = Course.query.filter_by(code='CS101').first()
+        cs201 = Course.query.filter_by(code='CS201').first()
+        cs301 = Course.query.filter_by(code='CS301').first()
+        cs401 = Course.query.filter_by(code='CS401').first()
+        
+        if not lecturer1 or not students or not cs101:
             return
         
         # Create sample assignments
@@ -152,7 +275,8 @@ def create_demo_assignments_and_submissions():
                 'due_date': datetime.utcnow() + timedelta(days=7),
                 'max_marks': 100,
                 'file_requirements': 'Python files (.py)',
-                'created_by': lecturer1.id
+                'created_by': lecturer1.id,
+                'course_id': cs101.id
             },
             {
                 'title': 'Web Development Project',
@@ -161,7 +285,8 @@ def create_demo_assignments_and_submissions():
                 'due_date': datetime.utcnow() + timedelta(days=14),
                 'max_marks': 150,
                 'file_requirements': 'HTML, CSS files',
-                'created_by': lecturer1.id
+                'created_by': lecturer1.id,
+                'course_id': cs201.id
             },
             {
                 'title': 'Database Design Assignment',
@@ -170,7 +295,8 @@ def create_demo_assignments_and_submissions():
                 'due_date': datetime.utcnow() + timedelta(days=10),
                 'max_marks': 120,
                 'file_requirements': 'SQL files, images',
-                'created_by': lecturer2.id if lecturer2 else lecturer1.id
+                'created_by': lecturer2.id if lecturer2 else lecturer1.id,
+                'course_id': cs301.id if cs301 else cs101.id
             }
         ]
         
@@ -279,6 +405,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), nullable=False)  # student, lecturer, admin
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
+    class_id = db.Column(db.Integer, db.ForeignKey('class.id'), nullable=True)  # For students
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
@@ -286,6 +413,46 @@ class User(UserMixin, db.Model):
     assignments_created = db.relationship('Assignment', backref='creator', lazy=True)
     submissions = db.relationship('Submission', backref='student', lazy=True)
     grades = db.relationship('Grade', backref='grader', lazy=True)
+
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    code = db.Column(db.String(20), unique=True, nullable=False)
+    description = db.Column(db.Text)
+    lecturer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    class_id = db.Column(db.Integer, db.ForeignKey('class.id'), nullable=False)  # Course belongs to a class
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    lecturer = db.relationship('User', backref='taught_courses', foreign_keys=[lecturer_id])
+    students = db.relationship('User', secondary='course_enrollment', backref='enrolled_courses')
+    
+    def __repr__(self):
+        return f'<Course {self.code}: {self.name}>'
+
+# Class model for organizing students
+class Class(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # e.g., "Computer Science Year 1"
+    code = db.Column(db.String(20), unique=True, nullable=False)  # e.g., "CS1A"
+    description = db.Column(db.Text)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    creator = db.relationship('User', backref='created_classes', foreign_keys=[created_by])
+    students = db.relationship('User', backref='student_class', foreign_keys='User.class_id')
+    courses = db.relationship('Course', backref='class_group')
+    
+    def __repr__(self):
+        return f'<Class {self.code}: {self.name}>'
+
+# Course enrollment table (many-to-many relationship)
+course_enrollment = db.Table('course_enrollment',
+    db.Column('course_id', db.Integer, db.ForeignKey('course.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('enrolled_at', db.DateTime, default=datetime.utcnow)
+)
 
 class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -296,10 +463,12 @@ class Assignment(db.Model):
     max_marks = db.Column(db.Integer, nullable=False)
     file_requirements = db.Column(db.String(200), nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)  # Add course relationship
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
     # Relationships
+    course = db.relationship('Course', backref='assignments')  # Add course relationship
     submissions = db.relationship('Submission', backref='assignment', lazy=True)
 
 class Submission(db.Model):
@@ -529,7 +698,8 @@ def send_submission_notification(submission):
             template='new_submission.html',
             lecturer=lecturer,
             submission=submission,
-            student=submission.student
+            student=submission.student,
+            assignment=submission.assignment
         )
 
 def send_grade_notification(grade):
@@ -773,19 +943,23 @@ def student_dashboard():
 @app.route('/student/assignments')
 @login_required
 def student_assignments():
-    """Student assignments page - shows all available assignments"""
+    """Student assignments page - shows assignments from enrolled courses only"""
     if current_user.role != 'student':
         flash('Access denied', 'error')
         return redirect(url_for('dashboard'))
     
-    # Get available assignments
-    assignments = Assignment.query.filter_by(is_active=True).all()
+    # Get assignments only from courses the student is enrolled in
+    enrolled_course_ids = [course.id for course in current_user.enrolled_courses]
+    assignments = Assignment.query.filter(
+        Assignment.course_id.in_(enrolled_course_ids),
+        Assignment.is_active == True
+    ).all()
     
     # Get student's submissions to show status
     submissions = Submission.query.filter_by(student_id=current_user.id).all()
     
     return render_template('student_assignments.html', 
-                         assignments=assignments,
+                         assignments=assignments, 
                          submissions=submissions)
 
 @app.route('/lecturer/dashboard')
@@ -842,6 +1016,7 @@ def create_assignment():
         due_date = datetime.strptime(request.form['due_date'], '%Y-%m-%dT%H:%M')
         max_marks = int(request.form['max_marks'])
         file_requirements = request.form['file_requirements']
+        course_id = int(request.form['course_id'])
         
         assignment = Assignment(
             title=title,
@@ -850,29 +1025,199 @@ def create_assignment():
             due_date=due_date,
             max_marks=max_marks,
             file_requirements=file_requirements,
-            created_by=current_user.id
+            created_by=current_user.id,
+            course_id=course_id
         )
         
         db.session.add(assignment)
         db.session.commit()
         
-        # Send notifications to all students
-        students = User.query.filter_by(role='student', is_active=True).all()
+        # Get course and students enrolled in this course
+        course = Course.query.get(course_id)
+        students = course.students if course else []
+        
+        # Send notifications only to students in this course
         for student in students:
             send_notification(
                 student.id,
                 f"New Assignment: {title}",
-                f"A new assignment '{title}' has been created. Due date: {due_date.strftime('%Y-%m-%d %H:%M')}",
+                f"A new assignment '{title}' has been created for {course.name}. Due date: {due_date.strftime('%Y-%m-%d %H:%M')}",
                 'assignment'
             )
         
-        # Send email notifications
+        # Send email notifications only to students in this course
         send_assignment_notification(assignment, students)
         
-        flash('Assignment created successfully!', 'success')
+        flash(f'Assignment created successfully for {course.name}!', 'success')
         return redirect(url_for('lecturer_dashboard'))
     
-    return render_template('create_assignment.html')
+    # Get courses taught by current lecturer
+    courses = Course.query.filter_by(lecturer_id=current_user.id).all()
+    return render_template('create_assignment.html', courses=courses)
+
+@app.route('/class/create', methods=['GET', 'POST'])
+@login_required
+def create_class():
+    if current_user.role != 'admin':
+        flash('Access denied. Only administrators can create classes.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        code = request.form['code'].upper()
+        description = request.form.get('description', '')
+        
+        # Check if class code already exists
+        existing_class = Class.query.filter_by(code=code).first()
+        if existing_class:
+            flash('Class code already exists!', 'error')
+            return render_template('create_class.html')
+        
+        # Create new class
+        new_class = Class(
+            name=name,
+            code=code,
+            description=description,
+            created_by=current_user.id
+        )
+        
+        db.session.add(new_class)
+        db.session.commit()
+        
+        flash(f'Class "{name}" created successfully!', 'success')
+        return redirect(url_for('admin_dashboard'))
+    
+    return render_template('create_class.html')
+
+@app.route('/course/create', methods=['GET', 'POST'])
+@login_required
+def create_course():
+    if current_user.role not in ['lecturer', 'admin']:
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get all classes (admin creates classes, lecturers select from them)
+    classes = Class.query.all()
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        code = request.form['code'].upper()
+        description = request.form.get('description', '')
+        class_id = request.form.get('class_id')
+        
+        if not class_id:
+            flash('Please select a class for this course!', 'error')
+            return render_template('create_course.html', classes=classes)
+        
+        # Check if course code already exists
+        existing_course = Course.query.filter_by(code=code).first()
+        if existing_course:
+            flash('Course code already exists!', 'error')
+            return render_template('create_course.html', classes=classes)
+        
+        # Create new course
+        course = Course(
+            name=name,
+            code=code,
+            description=description,
+            lecturer_id=current_user.id,
+            class_id=int(class_id)
+        )
+        
+        db.session.add(course)
+        db.session.commit()
+        
+        flash(f'Course "{name}" created successfully!', 'success')
+        return redirect(url_for('lecturer_dashboard'))
+    
+    return render_template('create_course.html', classes=classes)
+
+@app.route('/class/select', methods=['GET', 'POST'])
+@login_required
+def select_class():
+    if current_user.role != 'student':
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get all available classes
+    available_classes = Class.query.all()
+    
+    if request.method == 'POST':
+        class_id = request.form.get('class_id')
+        
+        if not class_id:
+            flash('Please select a class.', 'error')
+            return render_template('select_class.html', available_classes=available_classes)
+        
+        # Assign student to class
+        current_user.class_id = int(class_id)
+        db.session.commit()
+        
+        selected_class = Class.query.get(int(class_id))
+        flash(f'Successfully joined {selected_class.name} ({selected_class.code})!', 'success')
+        return redirect(url_for('enroll_course'))
+    
+    return render_template('select_class.html', available_classes=available_classes)
+
+@app.route('/course/enroll', methods=['GET', 'POST'])
+@login_required
+def enroll_course():
+    if current_user.role != 'student':
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Check if student has selected a class
+    if not current_user.class_id:
+        flash('Please select your class first.', 'info')
+        return redirect(url_for('select_class'))
+    
+    # Get available courses for the student's class (courses they're not already enrolled in)
+    enrolled_course_ids = [course.id for course in current_user.enrolled_courses]
+    available_courses = Course.query.filter(
+        Course.class_id == current_user.class_id,
+        ~Course.id.in_(enrolled_course_ids)
+    ).all()
+    
+    if request.method == 'POST':
+        course_id = request.form.get('course_id')
+        
+        if not course_id:
+            flash('Please select a course to enroll in.', 'error')
+            return render_template('enroll_course.html', available_courses=available_courses)
+        
+        # Find course by ID
+        course = Course.query.get(int(course_id))
+        
+        if not course:
+            flash('Course not found. Please try again.', 'error')
+            return render_template('enroll_course.html', available_courses=available_courses)
+        
+        # Check if already enrolled (double-check)
+        if course in current_user.enrolled_courses:
+            flash('You are already enrolled in this course!', 'error')
+            return render_template('enroll_course.html', available_courses=available_courses)
+        
+        # Enroll student
+        course.students.append(current_user)
+        db.session.commit()
+        
+        flash(f'Successfully enrolled in {course.name} ({course.code})!', 'success')
+        return redirect(url_for('student_dashboard'))
+    
+    return render_template('enroll_course.html', available_courses=available_courses)
+
+@app.route('/course/available')
+@login_required
+def available_courses():
+    if current_user.role != 'student':
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get all courses not enrolled by current student
+    enrolled_course_ids = [course.id for course in current_user.enrolled_courses]
+    available_courses = Course.query.filter(~Course.id.in_(enrolled_course_ids)).all()
+    
+    return render_template('available_courses.html', courses=available_courses)
 
 @app.route('/assignment/submit/<int:assignment_id>', methods=['GET', 'POST'])
 @login_required
