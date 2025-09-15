@@ -704,16 +704,24 @@ def send_submission_notification(submission):
 
 def send_grade_notification(grade):
     """Send email notification about grade"""
-    student = User.query.get(grade.student_id)
-    if student:
-        send_email(
-            to_email=student.email,
-            subject=f"Grade Posted: {grade.assignment.title}",
-            template='grade_notification.html',
-            student=student,
-            grade=grade,
-            assignment=grade.assignment
-        )
+    try:
+        # Access student through submission relationship
+        student = grade.submission.student
+        assignment = grade.submission.assignment
+        
+        if student and assignment:
+            send_email(
+                to_email=student.email,
+                subject=f"Grade Posted: {assignment.title}",
+                template='grade_notification.html',
+                student=student,
+                grade=grade,
+                assignment=assignment
+            )
+            return True
+    except Exception as e:
+        print(f"Error sending grade notification: {e}")
+        return False
 
 def send_deadline_reminder(assignment, students):
     """Send deadline reminder emails"""
@@ -1325,17 +1333,25 @@ def grade_submission(submission_id):
         db.session.commit()
         
         # Send notification to student
-        send_notification(
-            submission.student_id,
-            f"Grade Received: {submission.assignment.title}",
-            f"Your submission for '{submission.assignment.title}' has been graded. Marks: {marks}",
-            'grade'
-        )
+        try:
+            send_notification(
+                submission.student_id,
+                f"Grade Received: {submission.assignment.title}",
+                f"Your submission for '{submission.assignment.title}' has been graded. Marks: {marks}",
+                'grade'
+            )
+        except Exception as e:
+            print(f"Notification sending failed: {e}")
+            # Don't fail the grading process if notification fails
         
         # Send email notification
         grade = Grade.query.filter_by(submission_id=submission_id).first()
         if grade:
-            send_grade_notification(grade)
+            try:
+                send_grade_notification(grade)
+            except Exception as e:
+                print(f"Email notification failed: {e}")
+                # Don't fail the grading process if email fails
         
         flash('Submission graded successfully!', 'success')
         return redirect(url_for('lecturer_dashboard'))
