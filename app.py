@@ -690,21 +690,24 @@ def send_email_flask_mail(to_email, subject, html_content):
 
 def send_assignment_notification(assignment, students):
     """Send email notification about new assignment"""
+    results = []
     for student in students:
-        send_email(
+        result = send_email(
             to_email=student.email,
             subject=f"New Assignment: {assignment.title}",
             template='new_assignment.html',
             student=student,
             assignment=assignment
         )
+        results.append(result)
+    return all(results)
 
 def send_submission_notification(submission):
     """Send email notification about submission"""
     # Notify the lecturer who created the assignment
     lecturer = User.query.get(submission.assignment.created_by)
     if lecturer:
-        send_email(
+        return send_email(
             to_email=lecturer.email,
             subject=f"New Submission: {submission.assignment.title}",
             template='new_submission.html',
@@ -713,6 +716,7 @@ def send_submission_notification(submission):
             student=submission.student,
             assignment=submission.assignment
         )
+    return False
 
 def send_grade_notification(grade):
     """Send email notification about grade"""
@@ -737,6 +741,7 @@ def send_grade_notification(grade):
 
 def send_deadline_reminder(assignment, students):
     """Send deadline reminder emails"""
+    results = []
     for student in students:
         # Check if student has already submitted
         existing_submission = Submission.query.filter_by(
@@ -745,13 +750,15 @@ def send_deadline_reminder(assignment, students):
         ).first()
         
         if not existing_submission:
-            send_email(
+            result = send_email(
                 to_email=student.email,
                 subject=f"Deadline Reminder: {assignment.title}",
                 template='deadline_reminder.html',
                 student=student,
                 assignment=assignment
             )
+            results.append(result)
+    return all(results) if results else True
 
 def send_welcome_email(user):
     """Send welcome email to new user"""
