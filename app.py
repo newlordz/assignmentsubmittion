@@ -65,6 +65,16 @@ app.config['PLAGIARISM_CHECK_API_TOKEN'] = os.environ.get('PLAGIARISM_CHECK_API_
 app.config['PLAGIARISM_CHECK_API_URL'] = 'https://plagiarismcheck.org/api/org/text/check/'
 app.config['USE_PLAGIARISM_CHECK_API'] = os.environ.get('USE_PLAGIARISM_CHECK_API', 'false').lower() in ['true', 'on', '1']
 
+# Quetext API Configuration
+app.config['QUETEXT_API_KEY'] = os.environ.get('QUETEXT_API_KEY', '')
+app.config['QUETEXT_API_URL'] = 'https://api.quetext.com/v1/plagiarism'
+app.config['USE_QUETEXT_API'] = os.environ.get('USE_QUETEXT_API', 'false').lower() in ['true', 'on', '1']
+
+# DupliChecker API Configuration
+app.config['DUPLICHECKER_API_KEY'] = os.environ.get('DUPLICHECKER_API_KEY', '')
+app.config['DUPLICHECKER_API_URL'] = 'https://www.duplichecker.com/api/plagiarism-check'
+app.config['USE_DUPLICHECKER_API'] = os.environ.get('USE_DUPLICHECKER_API', 'false').lower() in ['true', 'on', '1']
+
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -705,7 +715,7 @@ def get_plagiarism_report(check_id):
         return None
 
 def calculate_plagiarism_score(content, other_submissions):
-    """Calculate plagiarism score using TF-IDF and cosine similarity"""
+    """Calculate comprehensive plagiarism score using multiple local methods"""
     if not other_submissions or not content:
         return 0.0
     
@@ -719,17 +729,421 @@ def calculate_plagiarism_score(content, other_submissions):
         return 0.0
     
     try:
-        # Vectorize documents
-        vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
+        # Method 1: Enhanced TF-IDF with multiple n-grams
+        tfidf_score = calculate_tfidf_similarity(documents)
+        
+        # Method 2: Semantic similarity using word contexts
+        semantic_score = calculate_semantic_similarity(documents)
+        
+        # Method 3: Content fingerprinting
+        fingerprint_score = calculate_fingerprint_similarity(documents)
+        
+        # Method 4: Phrase matching
+        phrase_score = calculate_phrase_similarity(documents)
+        
+        # Method 5: Structure similarity
+        structure_score = calculate_structure_similarity(documents)
+        
+        # Weighted combination of all methods
+        weights = {
+            'tfidf': 0.3,
+            'semantic': 0.25,
+            'fingerprint': 0.2,
+            'phrase': 0.15,
+            'structure': 0.1
+        }
+        
+        final_score = (
+            tfidf_score * weights['tfidf'] +
+            semantic_score * weights['semantic'] +
+            fingerprint_score * weights['fingerprint'] +
+            phrase_score * weights['phrase'] +
+            structure_score * weights['structure']
+        )
+        
+        return round(final_score, 2)
+        
+    except Exception as e:
+        print(f"Error in comprehensive plagiarism calculation: {e}")
+        return calculate_simple_similarity(content, other_submissions)
+
+def calculate_tfidf_similarity(documents):
+    """Enhanced TF-IDF similarity calculation"""
+    try:
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+        import numpy as np
+        
+        # Create enhanced TF-IDF vectorizer
+        vectorizer = TfidfVectorizer(
+            stop_words='english',
+            ngram_range=(1, 4),  # Use 1-4 word combinations
+            max_features=2000,
+            lowercase=True,
+            strip_accents='unicode',
+            min_df=1,
+            max_df=0.95
+        )
+        
+        # Fit and transform documents
         tfidf_matrix = vectorizer.fit_transform(documents)
         
-        # Calculate cosine similarity
-        similarity_scores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
+        # Calculate cosine similarity between first document and all others
+        similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
         
-        # Return maximum similarity score
-        return float(np.max(similarity_scores)) * 100
+        # Get maximum similarity score
+        max_similarity = np.max(similarities) if similarities.size > 0 else 0.0
+        
+        return max_similarity * 100
+        
+    except ImportError:
+        return calculate_simple_similarity(documents[0], documents[1:])
     except Exception as e:
-        print(f"Error in plagiarism calculation: {e}")
+        print(f"TF-IDF calculation error: {e}")
+        return 0.0
+
+def calculate_semantic_similarity(documents):
+    """Calculate semantic similarity using word frequency and context"""
+    try:
+        import re
+        from collections import Counter
+        
+        def preprocess_text(text):
+            # Clean and tokenize text
+            text = re.sub(r'[^\w\s]', ' ', text.lower())
+            words = text.split()
+            return [word for word in words if len(word) > 2]
+        
+        def get_word_contexts(text, window_size=3):
+            """Get word contexts for semantic analysis"""
+            words = preprocess_text(text)
+            contexts = {}
+            for i, word in enumerate(words):
+                start = max(0, i - window_size)
+                end = min(len(words), i + window_size + 1)
+                context = words[start:end]
+                if word not in contexts:
+                    contexts[word] = []
+                contexts[word].extend(context)
+            return contexts
+        
+        # Get contexts for all documents
+        all_contexts = []
+        for doc in documents:
+            contexts = get_word_contexts(doc)
+            all_contexts.append(contexts)
+        
+        # Calculate semantic overlap
+        if len(all_contexts) < 2:
+            return 0.0
+        
+        main_contexts = all_contexts[0]
+        max_similarity = 0.0
+        
+        for other_contexts in all_contexts[1:]:
+            similarity = 0.0
+            total_words = 0
+            
+            for word, contexts in main_contexts.items():
+                if word in other_contexts:
+                    # Calculate context similarity
+                    main_context_counter = Counter(contexts)
+                    other_context_counter = Counter(other_contexts[word])
+                    
+                    # Jaccard similarity of contexts
+                    intersection = sum((main_context_counter & other_context_counter).values())
+                    union = sum((main_context_counter | other_context_counter).values())
+                    
+                    if union > 0:
+                        similarity += intersection / union
+                    total_words += 1
+            
+            if total_words > 0:
+                avg_similarity = similarity / total_words
+                max_similarity = max(max_similarity, avg_similarity)
+        
+        return max_similarity * 100
+        
+    except Exception as e:
+        print(f"Semantic similarity error: {e}")
+        return 0.0
+
+def calculate_fingerprint_similarity(documents):
+    """Calculate similarity using content fingerprinting"""
+    try:
+        import hashlib
+        import re
+        
+        def create_fingerprint(text, n=5):
+            """Create content fingerprint using n-grams"""
+            # Clean text
+            text = re.sub(r'[^\w\s]', ' ', text.lower())
+            words = text.split()
+            
+            # Create n-grams
+            ngrams = []
+            for i in range(len(words) - n + 1):
+                ngram = ' '.join(words[i:i+n])
+                ngrams.append(ngram)
+            
+            # Hash n-grams
+            fingerprints = set()
+            for ngram in ngrams:
+                fingerprint = hashlib.md5(ngram.encode()).hexdigest()
+                fingerprints.add(fingerprint)
+            
+            return fingerprints
+        
+        if len(documents) < 2:
+            return 0.0
+        
+        main_fingerprints = create_fingerprint(documents[0])
+        max_similarity = 0.0
+        
+        for doc in documents[1:]:
+            other_fingerprints = create_fingerprint(doc)
+            
+            # Calculate Jaccard similarity
+            intersection = len(main_fingerprints & other_fingerprints)
+            union = len(main_fingerprints | other_fingerprints)
+            
+            if union > 0:
+                similarity = intersection / union
+                max_similarity = max(max_similarity, similarity)
+        
+        return max_similarity * 100
+        
+    except Exception as e:
+        print(f"Fingerprint similarity error: {e}")
+        return 0.0
+
+def calculate_phrase_similarity(documents):
+    """Calculate similarity based on common phrases"""
+    try:
+        import re
+        from collections import Counter
+        
+        def extract_phrases(text, min_length=3, max_length=8):
+            """Extract meaningful phrases from text"""
+            # Clean text
+            text = re.sub(r'[^\w\s]', ' ', text.lower())
+            words = text.split()
+            
+            phrases = []
+            for length in range(min_length, min(max_length + 1, len(words) + 1)):
+                for i in range(len(words) - length + 1):
+                    phrase = ' '.join(words[i:i+length])
+                    if len(phrase.strip()) > 0:
+                        phrases.append(phrase)
+            
+            return Counter(phrases)
+        
+        if len(documents) < 2:
+            return 0.0
+        
+        main_phrases = extract_phrases(documents[0])
+        max_similarity = 0.0
+        
+        for doc in documents[1:]:
+            other_phrases = extract_phrases(doc)
+            
+            # Calculate phrase overlap
+            common_phrases = main_phrases & other_phrases
+            total_phrases = main_phrases | other_phrases
+            
+            if len(total_phrases) > 0:
+                similarity = sum(common_phrases.values()) / sum(total_phrases.values())
+                max_similarity = max(max_similarity, similarity)
+        
+        return max_similarity * 100
+        
+    except Exception as e:
+        print(f"Phrase similarity error: {e}")
+        return 0.0
+
+def calculate_structure_similarity(documents):
+    """Calculate similarity based on document structure"""
+    try:
+        import re
+        
+        def analyze_structure(text):
+            """Analyze document structure"""
+            structure = {
+                'paragraphs': len(re.split(r'\n\s*\n', text)),
+                'sentences': len(re.split(r'[.!?]+', text)),
+                'words': len(text.split()),
+                'avg_sentence_length': 0,
+                'avg_paragraph_length': 0
+            }
+            
+            if structure['sentences'] > 0:
+                structure['avg_sentence_length'] = structure['words'] / structure['sentences']
+            
+            if structure['paragraphs'] > 0:
+                structure['avg_paragraph_length'] = structure['words'] / structure['paragraphs']
+            
+            return structure
+        
+        if len(documents) < 2:
+            return 0.0
+        
+        main_structure = analyze_structure(documents[0])
+        max_similarity = 0.0
+        
+        for doc in documents[1:]:
+            other_structure = analyze_structure(doc)
+            
+            # Calculate structural similarity
+            similarities = []
+            
+            # Compare ratios
+            if other_structure['avg_sentence_length'] > 0 and main_structure['avg_sentence_length'] > 0:
+                sent_sim = 1 - abs(main_structure['avg_sentence_length'] - other_structure['avg_sentence_length']) / max(main_structure['avg_sentence_length'], other_structure['avg_sentence_length'])
+                similarities.append(sent_sim)
+            
+            if other_structure['avg_paragraph_length'] > 0 and main_structure['avg_paragraph_length'] > 0:
+                para_sim = 1 - abs(main_structure['avg_paragraph_length'] - other_structure['avg_paragraph_length']) / max(main_structure['avg_paragraph_length'], other_structure['avg_paragraph_length'])
+                similarities.append(para_sim)
+            
+            if similarities:
+                avg_similarity = sum(similarities) / len(similarities)
+                max_similarity = max(max_similarity, avg_similarity)
+        
+        return max_similarity * 100
+        
+    except Exception as e:
+        print(f"Structure similarity error: {e}")
+        return 0.0
+
+def generate_detailed_plagiarism_report(content, other_contents, plagiarism_score):
+    """Generate detailed plagiarism report with analysis"""
+    try:
+        report = f"COMPREHENSIVE PLAGIARISM ANALYSIS REPORT\n"
+        report += "=" * 50 + "\n\n"
+        
+        # Basic information
+        report += f"📊 Overall Plagiarism Score: {plagiarism_score:.2f}%\n"
+        report += f"📝 Documents Compared: {len(other_contents) + 1}\n"
+        report += f"🔍 Analysis Methods: 5 (TF-IDF, Semantic, Fingerprint, Phrase, Structure)\n\n"
+        
+        # Risk assessment
+        if plagiarism_score >= 80:
+            report += "🚨 HIGH RISK: Significant similarity detected\n"
+            report += "   Recommendation: Immediate review required\n"
+        elif plagiarism_score >= 50:
+            report += "⚠️  MEDIUM RISK: Moderate similarity detected\n"
+            report += "   Recommendation: Manual review recommended\n"
+        elif plagiarism_score >= 20:
+            report += "🔍 LOW RISK: Minor similarity detected\n"
+            report += "   Recommendation: Quick review suggested\n"
+        else:
+            report += "✅ LOW RISK: Minimal similarity detected\n"
+            report += "   Recommendation: Content appears original\n"
+        
+        report += "\n"
+        
+        # Analysis breakdown
+        report += "📋 ANALYSIS BREAKDOWN:\n"
+        report += "-" * 30 + "\n"
+        
+        # Calculate individual method scores for breakdown
+        try:
+            documents = [content] + other_contents
+            tfidf_score = calculate_tfidf_similarity(documents)
+            semantic_score = calculate_semantic_similarity(documents)
+            fingerprint_score = calculate_fingerprint_similarity(documents)
+            phrase_score = calculate_phrase_similarity(documents)
+            structure_score = calculate_structure_similarity(documents)
+            
+            report += f"• TF-IDF Similarity: {tfidf_score:.1f}% (Word frequency analysis)\n"
+            report += f"• Semantic Similarity: {semantic_score:.1f}% (Context and meaning)\n"
+            report += f"• Fingerprint Match: {fingerprint_score:.1f}% (Content fingerprinting)\n"
+            report += f"• Phrase Overlap: {phrase_score:.1f}% (Common phrases)\n"
+            report += f"• Structure Similarity: {structure_score:.1f}% (Document structure)\n"
+        except:
+            report += "• Analysis breakdown unavailable\n"
+        
+        report += "\n"
+        
+        # Content analysis
+        report += "📄 CONTENT ANALYSIS:\n"
+        report += "-" * 30 + "\n"
+        report += f"• Word Count: {len(content.split())} words\n"
+        report += f"• Character Count: {len(content)} characters\n"
+        report += f"• Sentence Count: {len([s for s in content.split('.') if s.strip()])} sentences\n"
+        
+        # Common words analysis
+        try:
+            import re
+            from collections import Counter
+            words = re.findall(r'\b\w+\b', content.lower())
+            word_freq = Counter(words)
+            common_words = word_freq.most_common(5)
+            report += f"• Most Common Words: {', '.join([f'{word}({count})' for word, count in common_words])}\n"
+        except:
+            pass
+        
+        report += "\n"
+        
+        # Recommendations
+        report += "💡 RECOMMENDATIONS:\n"
+        report += "-" * 30 + "\n"
+        
+        if plagiarism_score >= 50:
+            report += "• Review the submission for potential plagiarism\n"
+            report += "• Check for proper citations and references\n"
+            report += "• Consider discussing with the student\n"
+        elif plagiarism_score >= 20:
+            report += "• Verify originality of similar sections\n"
+            report += "• Check for proper attribution\n"
+        else:
+            report += "• Content appears to be original\n"
+            report += "• No immediate action required\n"
+        
+        report += "\n"
+        report += "🔧 TECHNICAL DETAILS:\n"
+        report += "-" * 30 + "\n"
+        report += "• Detection Engine: Multi-method Local Analysis\n"
+        report += "• Comparison Database: Student submissions only\n"
+        report += "• Analysis Date: " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + "\n"
+        report += "• Confidence Level: High (Local analysis)\n"
+        
+        return report
+        
+    except Exception as e:
+        return f"Plagiarism Analysis Report\nScore: {plagiarism_score:.2f}%\nError generating detailed report: {str(e)}"
+
+def calculate_simple_similarity(content, other_submissions):
+    """Simple fallback similarity calculation"""
+    try:
+        import re
+        from collections import Counter
+        
+        def get_word_frequency(text):
+            # Clean and tokenize text
+            text = re.sub(r'[^\w\s]', ' ', text.lower())
+            words = text.split()
+            return Counter(words)
+        
+        main_words = get_word_frequency(content)
+        max_similarity = 0.0
+        
+        for sub in other_submissions:
+            if hasattr(sub, 'content') and sub.content:
+                other_words = get_word_frequency(sub.content)
+                
+                # Calculate Jaccard similarity
+                intersection = len(set(main_words.keys()) & set(other_words.keys()))
+                union = len(set(main_words.keys()) | set(other_words.keys()))
+                
+                if union > 0:
+                    similarity = intersection / union
+                    max_similarity = max(max_similarity, similarity)
+        
+        return max_similarity * 100
+        
+    except Exception as e:
+        print(f"Simple similarity error: {e}")
         return 0.0
 
 def send_notification(user_id, title, message, notification_type):
@@ -1620,47 +2034,8 @@ def plagiarism_check(submission_id):
                 'reason': content or 'No content available'
             })
         
-        # Try PlagiarismCheck.org API first
-        if app.config['USE_PLAGIARISM_CHECK_API'] and app.config['PLAGIARISM_CHECK_API_TOKEN']:
-            # Get student information
-            student = submission.student
-            author_email = student.email
-            author_name = f"{student.first_name} {student.last_name}"
-            
-            # Submit to PlagiarismCheck.org API
-            api_result = check_plagiarism_with_api(content, author_email, author_name)
-            
-            if api_result and 'check_id' in api_result:
-                # Store the check ID for later retrieval
-                submission.plagiarism_report = f"Plagiarism check submitted to PlagiarismCheck.org API. Check ID: {api_result['check_id']}"
-                submission.plagiarism_score = 0.0  # Will be updated when report is retrieved
-                db.session.commit()
-                
-                return jsonify({
-                    'plagiarism_score': 0.0,
-                    'report': submission.plagiarism_report,
-                    'check_id': api_result['check_id'],
-                    'status': 'submitted_to_api',
-                    'message': 'Plagiarism check submitted to professional service. Report will be available shortly.'
-                })
-        
-        # Try simple web-based plagiarism check
-        print("Trying simple web-based plagiarism check...")
-        web_result = check_plagiarism_simple_web(content)
-        
-        if web_result and web_result['status'] in ['original', 'similarity_detected']:
-            submission.plagiarism_score = web_result['score']
-            submission.plagiarism_report = web_result['report']
-            db.session.commit()
-            
-            return jsonify({
-                'plagiarism_score': web_result['score'],
-                'report': web_result['report'],
-                'status': 'completed_web'
-            })
-        
-        # Fallback to local plagiarism check
-        print("Using local plagiarism detection as final fallback")
+        # Use comprehensive local plagiarism detection
+        print("Running comprehensive local plagiarism detection...")
         
         # Get other submissions for comparison
         other_submissions = Submission.query.filter(
@@ -1683,15 +2058,18 @@ def plagiarism_check(submission_id):
         # Calculate plagiarism score
         plagiarism_score = calculate_plagiarism_score(content, other_contents)
         
+        # Generate detailed plagiarism report
+        plagiarism_report = generate_detailed_plagiarism_report(content, other_contents, plagiarism_score)
+        
         # Update submission record
         submission.plagiarism_score = plagiarism_score
-        submission.plagiarism_report = f"Plagiarism score: {plagiarism_score:.2f}%"
+        submission.plagiarism_report = plagiarism_report
         db.session.commit()
         
         return jsonify({
             'plagiarism_score': plagiarism_score,
-            'report': submission.plagiarism_report,
-            'status': 'completed_local'
+            'report': plagiarism_report,
+            'status': 'completed_comprehensive'
         })
         
     except Exception as e:
