@@ -1,0 +1,44 @@
+# E-Assignment System - One-Click Installation
+# Copy and paste this entire block into your terminal/command prompt
+
+# For Windows (Command Prompt or PowerShell):
+python -c "
+import subprocess, sys, os, platform
+print('🎓 E-Assignment System - Installing...')
+packages = ['flask', 'flask-sqlalchemy', 'flask-login', 'flask-mail', 'werkzeug', 'scikit-learn', 'numpy', 'beautifulsoup4', 'requests', 'python-dotenv']
+for pkg in packages:
+    print(f'Installing {pkg}...')
+    subprocess.run([sys.executable, '-m', 'pip', 'install', pkg], check=True)
+print('✅ All packages installed!')
+print('🚀 Starting application...')
+subprocess.run([sys.executable, 'app.py'])
+"
+
+# For Mac/Linux (Terminal):
+python3 -c "
+import subprocess, sys, os, platform
+print('🎓 E-Assignment System - Installing...')
+packages = ['flask', 'flask-sqlalchemy', 'flask-login', 'flask-mail', 'werkzeug', 'scikit-learn', 'numpy', 'beautifulsoup4', 'requests', 'python-dotenv']
+for pkg in packages:
+    print(f'Installing {pkg}...')
+    subprocess.run([sys.executable, '-m', 'pip', 'install', pkg], check=True)
+print('✅ All packages installed!')
+print('🚀 Starting application...')
+subprocess.run([sys.executable, 'app.py'])
+"
+
+# Alternative: If the above doesn't work, use this step-by-step approach:
+
+# Step 1: Install Python packages
+pip install flask flask-sqlalchemy flask-login flask-mail werkzeug scikit-learn numpy beautifulsoup4 requests python-dotenv
+
+# Step 2: Run the application
+python app.py
+
+# Step 3: Open your browser and go to:
+# http://localhost:5000
+
+# Demo Accounts:
+# Admin: admin@demo.com / admin123
+# Lecturer: lecturer@demo.com / lecturer123
+# Student: student@demo.com / student123

@@ -36,47 +36,102 @@ A comprehensive web-based assignment management platform built with Python Flask
 
 ## 📦 Installation
 
-### Prerequisites
+### 🚀 Quick Start (One-Click Installation)
+
+**For Windows (Command Prompt/PowerShell):**
+```bash
+python -c "
+import subprocess, sys, os, platform
+print('🎓 E-Assignment System - Installing...')
+packages = ['flask', 'flask-sqlalchemy', 'flask-login', 'flask-mail', 'werkzeug', 'scikit-learn', 'numpy', 'beautifulsoup4', 'requests', 'python-dotenv']
+for pkg in packages:
+    print(f'Installing {pkg}...')
+    subprocess.run([sys.executable, '-m', 'pip', 'install', pkg], check=True)
+print('✅ All packages installed!')
+print('🚀 Starting application...')
+subprocess.run([sys.executable, 'app.py'])
+"
+```
+
+**For Mac/Linux (Terminal):**
+```bash
+python3 -c "
+import subprocess, sys, os, platform
+print('🎓 E-Assignment System - Installing...')
+packages = ['flask', 'flask-sqlalchemy', 'flask-login', 'flask-mail', 'werkzeug', 'scikit-learn', 'numpy', 'beautifulsoup4', 'requests', 'python-dotenv']
+for pkg in packages:
+    print(f'Installing {pkg}...')
+    subprocess.run([sys.executable, '-m', 'pip', 'install', pkg], check=True)
+print('✅ All packages installed!')
+print('🚀 Starting application...')
+subprocess.run([sys.executable, 'app.py'])
+"
+```
+
+### 📋 Manual Installation
+
+**Prerequisites:**
 - Python 3.8 or higher
 - pip (Python package installer)
 
-### Setup Instructions
+**Step-by-Step Setup:**
 
-1. **Clone the repository**
+1. **Install Python packages**
    ```bash
-   git clone <repository-url>
-   cd assignment-submission-system
+   pip install flask flask-sqlalchemy flask-login flask-mail werkzeug scikit-learn numpy beautifulsoup4 requests python-dotenv
    ```
 
-2. **Create a virtual environment**
-   ```bash
-   python -m venv venv
-   
-   # On Windows
-   venv\Scripts\activate
-   
-   # On macOS/Linux
-   source venv/bin/activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Initialize the database**
-   ```bash
-   python app.py
-   ```
-   This will create the SQLite database and an admin user.
-
-5. **Run the application**
+2. **Run the application**
    ```bash
    python app.py
    ```
 
-6. **Access the application**
+3. **Access the application**
    Open your browser and navigate to `http://localhost:5000`
+
+### 🎯 Demo Accounts
+
+The system comes with pre-configured demo accounts:
+
+**Admin Account:**
+- Email: `admin@demo.com`
+- Password: `admin123`
+
+**Lecturer Account:**
+- Email: `lecturer@demo.com`
+- Password: `lecturer123`
+
+**Student Account:**
+- Email: `student@demo.com`
+- Password: `student123`
+
+### 📧 Email Configuration (Optional)
+
+To enable email notifications:
+
+1. **Create `.env` file** in the project root:
+   ```env
+   MAIL_USERNAME=your_email@gmail.com
+   MAIL_PASSWORD=your_gmail_app_password
+   MAIL_DEFAULT_SENDER=your_email@gmail.com
+   ```
+
+2. **Gmail Setup:**
+   - Enable 2-Factor Authentication
+   - Generate App Password: Google Account → Security → 2-Step Verification → App passwords
+   - Use the App Password in `.env` file
+
+### 🔧 Troubleshooting
+
+**If you get import errors:**
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+**If database errors occur:**
+- Delete `assignment_system.db` file
+- Restart the application (it will recreate the database)
 
 ## 🔐 Default Admin Account
 
