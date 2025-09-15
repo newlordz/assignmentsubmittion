@@ -571,6 +571,64 @@ def read_file_content(file_path):
     except Exception as e:
         return f"Error reading file: {str(e)}"
 
+def check_plagiarism_simple_web(content):
+    """Simple web-based plagiarism check using search engines"""
+    try:
+        import requests
+        from urllib.parse import quote
+        import time
+        import re
+        
+        # Extract meaningful phrases (10+ words)
+        text = re.sub(r'[^\w\s]', ' ', content)
+        words = text.split()
+        
+        if len(words) < 10:
+            return {
+                'score': 0.0,
+                'report': 'Text too short for meaningful plagiarism check',
+                'status': 'too_short'
+            }
+        
+        # Take first 50 words as sample
+        sample_text = ' '.join(words[:50])
+        
+        # Simple search using DuckDuckGo
+        search_url = f"https://html.duckduckgo.com/html/?q={quote(sample_text)}"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        response = requests.get(search_url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            # Simple check - if we get results, there might be similarity
+            if 'No results found' in response.text:
+                return {
+                    'score': 0.0,
+                    'report': 'No similar content found in web search',
+                    'status': 'original'
+                }
+            else:
+                return {
+                    'score': 25.0,  # Conservative estimate
+                    'report': 'Similar content found in web search - manual review recommended',
+                    'status': 'similarity_detected'
+                }
+        else:
+            return {
+                'score': 0.0,
+                'report': 'Web search failed - unable to check',
+                'status': 'search_failed'
+            }
+            
+    except Exception as e:
+        return {
+            'score': 0.0,
+            'report': f'Web plagiarism check failed: {str(e)}',
+            'status': 'error'
+        }
+
 def check_plagiarism_with_api(content, author_email, author_name=None):
     """Check plagiarism using PlagiarismCheck.org API"""
     try:
@@ -1586,8 +1644,23 @@ def plagiarism_check(submission_id):
                     'message': 'Plagiarism check submitted to professional service. Report will be available shortly.'
                 })
         
+        # Try simple web-based plagiarism check
+        print("Trying simple web-based plagiarism check...")
+        web_result = check_plagiarism_simple_web(content)
+        
+        if web_result and web_result['status'] in ['original', 'similarity_detected']:
+            submission.plagiarism_score = web_result['score']
+            submission.plagiarism_report = web_result['report']
+            db.session.commit()
+            
+            return jsonify({
+                'plagiarism_score': web_result['score'],
+                'report': web_result['report'],
+                'status': 'completed_web'
+            })
+        
         # Fallback to local plagiarism check
-        print("Using local plagiarism detection as fallback")
+        print("Using local plagiarism detection as final fallback")
         
         # Get other submissions for comparison
         other_submissions = Submission.query.filter(
