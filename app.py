@@ -28,6 +28,14 @@ import time
 import shutil
 from apscheduler.schedulers.background import BackgroundScheduler
 
+# Load environment variables from .env file
+if os.path.exists('.env'):
+    with open('.env', 'r') as f:
+        for line in f:
+            if '=' in line and not line.startswith('#'):
+                key, value = line.strip().split('=', 1)
+                os.environ[key] = value
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///assignment_system.db')
@@ -747,7 +755,7 @@ def send_deadline_reminder(assignment, students):
 
 def send_welcome_email(user):
     """Send welcome email to new user"""
-    send_email(
+    return send_email(
         to_email=user.email,
         subject="Welcome to E-Assignment Submission System",
         template='welcome.html',
