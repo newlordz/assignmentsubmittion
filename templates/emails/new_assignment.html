@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Assignment Available</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #28a745;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .assignment-title {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .assignment-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        .detail-item {
+            margin-bottom: 15px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+            display: inline-block;
+            width: 120px;
+        }
+        .due-date {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .due-date-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #856404;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .cta-button:hover {
+            background-color: #218838;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .instructions {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .file-requirements {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">📝 New Assignment</div>
+            <h1 class="assignment-title">{{ assignment.title }}</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hello {{ student.first_name }},</p>
+            <p>A new assignment has been posted and is now available for submission!</p>
+            
+            <div class="assignment-details">
+                <h3>Assignment Details:</h3>
+                <div class="detail-item">
+                    <span class="detail-label">Title:</span> {{ assignment.title }}
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Description:</span> {{ assignment.description }}
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Max Marks:</span> {{ assignment.max_marks }}
+                </div>
+                {% if assignment.file_requirements %}
+                <div class="detail-item">
+                    <span class="detail-label">File Types:</span> {{ assignment.file_requirements }}
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if assignment.instructions %}
+            <div class="instructions">
+                <h4>📋 Instructions:</h4>
+                <p>{{ assignment.instructions }}</p>
+            </div>
+            {% endif %}
+            
+            {% if assignment.file_requirements %}
+            <div class="file-requirements">
+                <h4>📎 File Requirements:</h4>
+                <p>{{ assignment.file_requirements }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="due-date">
+                <div class="due-date-text">
+                    ⏰ Due Date: {{ assignment.due_date.strftime('%B %d, %Y at %I:%M %p') }}
+                </div>
+            </div>
+            
+            <p>Don't wait until the last minute! Submit your assignment early to avoid any technical issues.</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ url_for('submit_assignment', assignment_id=assignment.id, _external=True) }}" class="cta-button">Submit Assignment</a>
+            </div>
+            
+            <p>You can also view all your assignments in your dashboard.</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated notification from the E-Assignment Submission System.</p>
+            <p>If you have any questions about this assignment, please contact your lecturer.</p>
+        </div>
+    </div>
+</body>
+</html>

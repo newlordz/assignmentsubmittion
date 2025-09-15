@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -32,10 +33,21 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
+# Email Configuration
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
+app.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'false').lower() in ['true', 'on', '1']
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@university.edu')
+app.config['MAIL_SUPPRESS_SEND'] = os.environ.get('MAIL_SUPPRESS_SEND', 'false').lower() in ['true', 'on', '1']
+
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db = SQLAlchemy(app)
+mail = Mail(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -407,6 +419,106 @@ def send_notification(user_id, title, message, notification_type):
     db.session.add(notification)
     db.session.commit()
 
+def send_email(to_email, subject, template, **kwargs):
+    """Send email using Flask-Mail"""
+    try:
+        if app.config['MAIL_SUPPRESS_SEND']:
+            print(f"📧 Email suppressed: {subject} to {to_email}")
+            return True
+            
+        if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
+            print(f"⚠️ Email not configured: {subject} to {to_email}")
+            return False
+            
+        msg = Message(
+            subject=subject,
+            recipients=[to_email],
+            sender=app.config['MAIL_DEFAULT_SENDER']
+        )
+        
+        # Render email template
+        msg.html = render_template(f'emails/{template}', **kwargs)
+        
+        # Send email in background thread
+        def send_async_email(app, msg):
+            with app.app_context():
+                mail.send(msg)
+        
+        thread = threading.Thread(target=send_async_email, args=(app, msg))
+        thread.start()
+        
+        print(f"📧 Email sent: {subject} to {to_email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Email failed: {e}")
+        return False
+
+def send_assignment_notification(assignment, students):
+    """Send email notification about new assignment"""
+    for student in students:
+        send_email(
+            to_email=student.email,
+            subject=f"New Assignment: {assignment.title}",
+            template='new_assignment.html',
+            student=student,
+            assignment=assignment
+        )
+
+def send_submission_notification(submission):
+    """Send email notification about submission"""
+    # Notify the lecturer who created the assignment
+    lecturer = User.query.get(submission.assignment.created_by)
+    if lecturer:
+        send_email(
+            to_email=lecturer.email,
+            subject=f"New Submission: {submission.assignment.title}",
+            template='new_submission.html',
+            lecturer=lecturer,
+            submission=submission,
+            student=submission.student
+        )
+
+def send_grade_notification(grade):
+    """Send email notification about grade"""
+    student = User.query.get(grade.student_id)
+    if student:
+        send_email(
+            to_email=student.email,
+            subject=f"Grade Posted: {grade.assignment.title}",
+            template='grade_notification.html',
+            student=student,
+            grade=grade,
+            assignment=grade.assignment
+        )
+
+def send_deadline_reminder(assignment, students):
+    """Send deadline reminder emails"""
+    for student in students:
+        # Check if student has already submitted
+        existing_submission = Submission.query.filter_by(
+            assignment_id=assignment.id,
+            student_id=student.id
+        ).first()
+        
+        if not existing_submission:
+            send_email(
+                to_email=student.email,
+                subject=f"Deadline Reminder: {assignment.title}",
+                template='deadline_reminder.html',
+                student=student,
+                assignment=assignment
+            )
+
+def send_welcome_email(user):
+    """Send welcome email to new user"""
+    send_email(
+        to_email=user.email,
+        subject="Welcome to E-Assignment Submission System",
+        template='welcome.html',
+        user=user
+    )
+
 def check_deadline_reminders():
     """Check for upcoming deadlines and send reminders"""
     with app.app_context():
@@ -445,6 +557,9 @@ def check_deadline_reminders():
                             f"Assignment '{assignment.title}' is due in {hours_until_due:.1f} hours. Don't forget to submit!",
                             'deadline'
                         )
+                        
+                        # Send email reminder
+                        send_deadline_reminder(assignment, [student])
 
 def check_overdue_assignments():
     """Check for overdue assignments and send notifications"""
@@ -554,6 +669,9 @@ def register():
         
         db.session.add(user)
         db.session.commit()
+        
+        # Send welcome email
+        send_welcome_email(user)
         
         flash('Registration successful! Please login.', 'success')
         return redirect(url_for('login'))
@@ -695,6 +813,9 @@ def create_assignment():
                 'assignment'
             )
         
+        # Send email notifications
+        send_assignment_notification(assignment, students)
+        
         flash('Assignment created successfully!', 'success')
         return redirect(url_for('lecturer_dashboard'))
     
@@ -765,6 +886,9 @@ def submit_assignment(assignment_id):
                 'submission'
             )
             
+            # Send email notification
+            send_submission_notification(submission)
+            
             flash('Assignment submitted successfully!', 'success')
             return redirect(url_for('student_dashboard'))
         else:
@@ -809,6 +933,11 @@ def grade_submission(submission_id):
             f"Your submission for '{submission.assignment.title}' has been graded. Marks: {marks}",
             'grade'
         )
+        
+        # Send email notification
+        grade = Grade.query.filter_by(submission_id=submission_id).first()
+        if grade:
+            send_grade_notification(grade)
         
         flash('Submission graded successfully!', 'success')
         return redirect(url_for('lecturer_dashboard'))
