@@ -178,7 +178,7 @@
             <p><strong>Don't wait until the last minute!</strong> Submit your assignment now to avoid any technical issues or late penalties.</p>
             
             <div style="text-align: center;">
-                <a href="{{ url_for('submit_assignment', assignment_id=assignment.id, _external=True) }}" class="cta-button">Submit Now</a>
+                <a href="{{ base_url }}/assignment/submit/{{ assignment.id }}" class="cta-button">Submit Now</a>
             </div>
             
             <p>You can also view all your assignments and their deadlines in your dashboard.</p>

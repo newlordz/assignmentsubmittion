@@ -602,6 +602,10 @@ def send_email(to_email, subject, template, **kwargs):
             print(f"📧 Email suppressed: {subject} to {to_email}")
             return True
         
+        # Add base URL for email templates
+        base_url = os.environ.get('BASE_URL', 'http://localhost:5000')
+        kwargs['base_url'] = base_url
+        
         # Render email template
         html_content = render_template(f'emails/{template}', **kwargs)
         
@@ -709,7 +713,7 @@ def send_grade_notification(grade):
         student = grade.submission.student
         assignment = grade.submission.assignment
         
-        if student and assignment:
+        if student and assignment and grade:
             send_email(
                 to_email=student.email,
                 subject=f"Grade Posted: {assignment.title}",

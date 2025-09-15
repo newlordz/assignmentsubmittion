@@ -173,7 +173,7 @@
             <p>Please review the submission and provide feedback and grades as soon as possible.</p>
             
             <div style="text-align: center;">
-                <a href="{{ url_for('grade_submission', submission_id=submission.id, _external=True) }}" class="cta-button">Review & Grade</a>
+                <a href="{{ base_url }}/submission/grade/{{ submission.id }}" class="cta-button">Review & Grade</a>
             </div>
             
             <p>You can also view all submissions for this assignment in your dashboard.</p>
