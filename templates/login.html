@@ -13,13 +13,33 @@
             <p>Sign in to your account to continue</p>
         </div>
         
+        {% if remembered_username %}
+        <div class="remembered-user-info" style="background: var(--blue-50); border: 1px solid var(--blue-200); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <i class="fas fa-user-circle" style="color: var(--blue-600);"></i>
+                <strong style="color: var(--blue-800);">{{ remembered_user_name }}</strong>
+                <span style="background: var(--blue-100); color: var(--blue-700); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; text-transform: capitalize;">{{ remembered_user_role }}</span>
+            </div>
+            <p style="color: var(--blue-700); font-size: 0.875rem; margin: 0;">
+                <i class="fas fa-info-circle"></i>
+                Your details have been remembered. Just enter your password to continue.
+            </p>
+            <button type="button" onclick="clearRememberedUser()" style="background: none; border: none; color: var(--blue-600); font-size: 0.75rem; cursor: pointer; margin-top: 0.5rem; text-decoration: underline;">
+                <i class="fas fa-times"></i> Use different account
+            </button>
+        </div>
+        {% endif %}
+        
         <form class="auth-form" method="POST">
             <div class="form-group">
                 <label for="username" class="form-label">
                     <i class="fas fa-user"></i>
                     Username
                 </label>
-                <input type="text" id="username" name="username" class="form-input" required>
+                <input type="text" id="username" name="username" class="form-input" 
+                       value="{{ remembered_username or '' }}" 
+                       {% if remembered_username %}readonly style="background-color: var(--gray-100);"{% endif %}
+                       required>
             </div>
             
             <div class="form-group">
@@ -32,7 +52,7 @@
             
             <div class="form-options">
                 <label class="checkbox-label">
-                    <input type="checkbox" name="remember">
+                    <input type="checkbox" name="remember" {% if remembered_username %}checked{% endif %}>
                     <span class="checkmark"></span>
                     Remember me
                 </label>
@@ -41,7 +61,7 @@
             
             <button type="submit" class="btn btn-primary btn-full">
                 <i class="fas fa-sign-in-alt"></i>
-                Sign In
+                {% if remembered_username %}Continue as {{ remembered_user_name }}{% else %}Sign In{% endif %}
             </button>
         </form>
         
@@ -67,6 +87,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('.auth-form');
         const inputs = document.querySelectorAll('.form-input');
+        const rememberCheckbox = document.querySelector('input[name="remember"]');
+        const usernameInput = document.querySelector('input[name="username"]');
         
         // Add focus/blur effects
         inputs.forEach(input => {
@@ -81,12 +103,53 @@
             });
         });
         
+        // Handle "Remember Me" checkbox changes
+        if (rememberCheckbox) {
+            rememberCheckbox.addEventListener('change', function() {
+                if (!this.checked) {
+                    // If unchecking "Remember Me", clear any remembered data
+                    clearRememberedUser();
+                }
+            });
+        }
+        
         // Form submission animation
         form.addEventListener('submit', function(e) {
             const submitBtn = this.querySelector('button[type="submit"]');
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
             submitBtn.disabled = true;
         });
+        
+        // Auto-focus password field if username is pre-filled
+        if (usernameInput && usernameInput.value && !usernameInput.readOnly) {
+            document.querySelector('input[name="password"]').focus();
+        } else if (usernameInput && usernameInput.readOnly) {
+            // If username is readonly (remembered), focus password field
+            document.querySelector('input[name="password"]').focus();
+        }
     });
+    
+    // Function to clear remembered user data
+    function clearRememberedUser() {
+        // Make an AJAX request to clear remembered user data
+        fetch('/clear-remembered-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload the page to show the clean login form
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing remembered user:', error);
+            // Fallback: just reload the page
+            window.location.reload();
+        });
+    }
 </script>
 {% endblock %}

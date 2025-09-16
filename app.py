@@ -91,6 +91,8 @@ mail = Mail(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+login_manager.session_protection = "strong"  # Force re-login on server restart
+login_manager.remember_cookie_duration = timedelta(days=30)  # Remember for 30 days
 
 # Initialize Dolos integration
 dolos_integration = None
@@ -109,6 +111,11 @@ if DOLOS_AVAILABLE:
 # Initialize scheduler for automated tasks
 scheduler = BackgroundScheduler()
 scheduler.start()
+
+# Server startup timestamp for session management
+SERVER_START_TIME = datetime.utcnow()
+print(f"🚀 Server started at: {SERVER_START_TIME}")
+print("📋 Session Management: Users will need to sign in again after server restart")
 
 def initialize_database():
     """Initialize database with demo accounts"""
@@ -1488,15 +1495,56 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        remember_me = request.form.get('remember') == 'on'
         user = User.query.filter_by(username=username).first()
         
         if user and check_password_hash(user.password_hash, password) and user.is_active:
-            login_user(user)
+            login_user(user, remember=remember_me)
+            
+            # Store user details in session for "Remember Me" functionality
+            if remember_me:
+                session['remembered_username'] = username
+                session['remembered_user_id'] = user.id
+                session['remembered_user_role'] = user.role
+                session['remembered_user_name'] = f"{user.first_name} {user.last_name}"
+            
             return redirect(url_for('dashboard'))
         else:
             flash('Invalid username or password', 'error')
     
+    # Check for remembered user details
+    remembered_username = session.get('remembered_username')
+    remembered_user_id = session.get('remembered_user_id')
+    
+    # Verify remembered user still exists and is active
+    if remembered_username and remembered_user_id:
+        user = User.query.get(remembered_user_id)
+        if user and user.username == remembered_username and user.is_active:
+            return render_template('login.html', 
+                                 remembered_username=remembered_username,
+                                 remembered_user_name=session.get('remembered_user_name'),
+                                 remembered_user_role=session.get('remembered_user_role'))
+    
     return render_template('login.html')
+
+@app.route('/clear-remembered-user', methods=['POST'])
+def clear_remembered_user():
+    """Clear remembered user data from session"""
+    session.pop('remembered_username', None)
+    session.pop('remembered_user_id', None)
+    session.pop('remembered_user_role', None)
+    session.pop('remembered_user_name', None)
+    
+    return jsonify({'success': True})
+
+@app.route('/api/server-status')
+def server_status():
+    """Check server status and session validity"""
+    return jsonify({
+        'server_start_time': SERVER_START_TIME.isoformat(),
+        'current_time': datetime.utcnow().isoformat(),
+        'session_protection': 'enabled'
+    })
 
 @app.route('/demo-login')
 def demo_login():
@@ -1546,7 +1594,14 @@ def register():
 @app.route('/logout')
 @login_required
 def logout():
+    # Clear remembered user data when explicitly logging out
+    session.pop('remembered_username', None)
+    session.pop('remembered_user_id', None)
+    session.pop('remembered_user_role', None)
+    session.pop('remembered_user_name', None)
+    
     logout_user()
+    flash('You have been logged out successfully.', 'success')
     return redirect(url_for('index'))
 
 @app.route('/dashboard')
