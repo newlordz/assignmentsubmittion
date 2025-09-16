@@ -6,7 +6,7 @@ A comprehensive web-based assignment management platform built with Python Flask
 
 ### For Students
 - **Easy Assignment Submission**: User-friendly interface for uploading assignments
-- **AI-Powered Plagiarism Detection**: Built-in originality checking before submission
+- **Advanced Plagiarism Detection**: Dual-mode detection using Dolos (for code) and local algorithms (for text)
 - **Automated Deadline Reminders**: Timely alerts to avoid missing deadlines
 - **Real-time Grade Tracking**: Access grades and feedback instantly
 - **Submission History**: View past assignments and feedback for self-review
@@ -15,7 +15,7 @@ A comprehensive web-based assignment management platform built with Python Flask
 - **Assignment Management**: Create and manage assignments with deadlines
 - **Automated Deadline Enforcement**: System blocks late submissions automatically
 - **Built-in Grading System**: Grade submissions directly within the platform
-- **Plagiarism Reports**: AI-generated originality results for academic integrity
+- **Advanced Plagiarism Reports**: Multi-method plagiarism detection with detailed analysis
 - **Student Progress Tracking**: Monitor submission status and performance
 
 ### For Administrators
@@ -25,12 +25,22 @@ A comprehensive web-based assignment management platform built with Python Flask
 - **Analytics & Reporting**: Generate data on submission rates and performance trends
 - **Data Security**: Maintain backup and privacy of academic content
 
+### 🔍 Advanced Plagiarism Detection
+- **Dolos Integration**: State-of-the-art code plagiarism detection for programming assignments
+- **Multi-Language Support**: Detects plagiarism in Python, JavaScript, Java, C/C++, and more
+- **Local Fallback**: Comprehensive text-based plagiarism detection using 5 different algorithms
+- **Detailed Reports**: Provides similarity scores, matched fragments, and analysis details
+- **Automatic Language Detection**: Intelligently detects programming language and applies appropriate analysis
+
 ## 🛠️ Technology Stack
 
 - **Backend**: Python Flask
 - **Database**: SQLite (development) / PostgreSQL (production)
 - **Frontend**: HTML5, CSS3, JavaScript
-- **AI/ML**: scikit-learn, NLTK for plagiarism detection
+- **Plagiarism Detection**: 
+  - **Dolos**: Advanced code plagiarism detection (Node.js/TypeScript)
+  - **Local Algorithms**: TF-IDF, Semantic Similarity, Content Fingerprinting, Phrase Matching, Structure Analysis
+- **AI/ML**: scikit-learn, NLTK for text analysis
 - **File Processing**: Pillow, python-magic
 - **Authentication**: Flask-Login with password hashing
 
@@ -104,6 +114,25 @@ The system comes with pre-configured demo accounts:
 **Student Account:**
 - Email: `student@demo.com`
 - Password: `student123`
+
+### 🔍 Advanced Plagiarism Detection Setup (Optional)
+
+For advanced code plagiarism detection using Dolos:
+
+1. **Install Node.js** (if not already installed):
+   - Download from: https://nodejs.org/
+   - Install the LTS version
+
+2. **Run Dolos setup**:
+   ```bash
+   python setup_dolos.py
+   ```
+
+3. **What you get:**
+   - ✅ Advanced code plagiarism detection for programming assignments
+   - ✅ Support for 20+ programming languages
+   - ✅ Detailed similarity analysis and reports
+   - ✅ Automatic fallback to local detection if Dolos unavailable
 
 ### 📧 Email Configuration (Optional)
 

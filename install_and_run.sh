@@ -23,8 +23,21 @@ for pkg in packages:
         subprocess.run([sys.executable, '-m', 'pip', 'install', pkg], check=True)
     except:
         print(f'Failed to install {pkg}')
-print('✅ Installation complete!')
+print('✅ Python packages installed!')
 "
+
+echo ""
+echo "Checking for Node.js (required for advanced plagiarism detection)..."
+if command -v node >/dev/null 2>&1; then
+    echo "✅ Node.js found - Advanced plagiarism detection available"
+    echo ""
+    echo "Setting up Dolos plagiarism detection..."
+    python3 setup_dolos.py
+else
+    echo "⚠️ Node.js not found. Advanced plagiarism detection will not be available."
+    echo "You can install Node.js from: https://nodejs.org/"
+    echo ""
+fi
 
 if [ $? -ne 0 ]; then
     echo ""
