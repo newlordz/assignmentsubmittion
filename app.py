@@ -842,8 +842,8 @@ def calculate_tfidf_similarity(documents):
         )
         
         # Fit and transform documents
-    tfidf_matrix = vectorizer.fit_transform(documents)
-    
+        tfidf_matrix = vectorizer.fit_transform(documents)
+        
         # Calculate cosine similarity between first document and all others
         similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
         
@@ -1906,14 +1906,14 @@ def submit_assignment(assignment_id):
                 )
             except TypeError:
                 # Fallback if content column doesn't exist
-            submission = Submission(
-                assignment_id=assignment_id,
-                student_id=current_user.id,
-                file_path=file_path,
-                file_name=file.filename,
-                file_size=os.path.getsize(file_path),
-                is_late=is_late
-            )
+                submission = Submission(
+                    assignment_id=assignment_id,
+                    student_id=current_user.id,
+                    file_path=file_path,
+                    file_name=file.filename,
+                    file_size=os.path.getsize(file_path),
+                    is_late=is_late
+                )
             
             db.session.add(submission)
             db.session.commit()
@@ -1968,12 +1968,12 @@ def grade_submission(submission_id):
         
         # Send notification to student
         try:
-        send_notification(
-            submission.student_id,
-            f"Grade Received: {submission.assignment.title}",
-            f"Your submission for '{submission.assignment.title}' has been graded. Marks: {marks}",
-            'grade'
-        )
+            send_notification(
+                submission.student_id,
+                f"Grade Received: {submission.assignment.title}",
+                f"Your submission for '{submission.assignment.title}' has been graded. Marks: {marks}",
+                'grade'
+            )
         except Exception as e:
             print(f"Notification sending failed: {e}")
             # Don't fail the grading process if notification fails
@@ -2068,8 +2068,8 @@ def edit_assignment(assignment_id):
 @login_required
 def plagiarism_check(submission_id):
     try:
-    submission = Submission.query.get_or_404(submission_id)
-    
+        submission = Submission.query.get_or_404(submission_id)
+        
         # Use stored content or read from file (with fallback for missing column)
         try:
             content = submission.content or read_file_content(submission.file_path)
@@ -2092,13 +2092,13 @@ def plagiarism_check(submission_id):
         
         # Use comprehensive local plagiarism detection
         print("Running comprehensive local plagiarism detection...")
-    
-    # Get other submissions for comparison
-    other_submissions = Submission.query.filter(
-        Submission.assignment_id == submission.assignment_id,
-        Submission.id != submission_id
-    ).all()
-    
+        
+        # Get other submissions for comparison
+        other_submissions = Submission.query.filter(
+            Submission.assignment_id == submission.assignment_id,
+            Submission.id != submission_id
+        ).all()
+        
         # Use stored content from other submissions
         other_contents = []
         for other_sub in other_submissions:
@@ -2110,20 +2110,20 @@ def plagiarism_check(submission_id):
             
             if other_content and not any(msg in other_content for msg in ["Binary file detected", "Archive file detected", "Unable to read"]):
                 other_contents.append(other_content)
-    
-    # Calculate plagiarism score
+        
+        # Calculate plagiarism score
         plagiarism_score = calculate_plagiarism_score(content, other_contents)
         
         # Generate detailed plagiarism report
         plagiarism_report = generate_detailed_plagiarism_report(content, other_contents, plagiarism_score)
-    
-    # Update submission record
-    submission.plagiarism_score = plagiarism_score
+        
+        # Update submission record
+        submission.plagiarism_score = plagiarism_score
         submission.plagiarism_report = plagiarism_report
-    db.session.commit()
-    
-    return jsonify({
-        'plagiarism_score': plagiarism_score,
+        db.session.commit()
+        
+        return jsonify({
+            'plagiarism_score': plagiarism_score,
             'report': plagiarism_report,
             'status': 'completed_comprehensive'
         })
