@@ -575,7 +575,22 @@ def load_user(user_id):
 
 # Utility Functions
 def allowed_file(filename):
-    ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'zip', 'rar'}
+    # Extended list of supported file types for plagiarism detection
+    ALLOWED_EXTENSIONS = {
+        # Text files (full analysis)
+        'txt', 'py', 'js', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'php', 'rb',
+        'scala', 'kt', 'swift', 'r', 'sql', 'html', 'css', 'sh', 'ps1', 'ts',
+        'jsx', 'tsx', 'vue', 'svelte', 'm', 'mm', 'h', 'hpp', 'cc', 'cxx',
+        'pl', 'pm', 'pyw', 'pyi', 'pyx', 'pxd', 'pxi', 'sass', 'scss', 'less',
+        'xml', 'json', 'yaml', 'yml', 'toml', 'ini', 'cfg', 'conf', 'md',
+        'rst', 'tex', 'latex', 'rtf', 'csv', 'tsv', 'log', 'out', 'err',
+        
+        # Document files (detection only)
+        'pdf', 'doc', 'docx', 'ppt', 'pptx', 'odt', 'ods', 'odp',
+        
+        # Archive files (detection only)
+        'zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz'
+    }
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def read_file_content(file_path):
@@ -583,29 +598,61 @@ def read_file_content(file_path):
     try:
         file_extension = file_path.split('.')[-1].lower()
         
-        if file_extension == 'txt':
-            # Read text files
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return f.read()
-        elif file_extension in ['pdf', 'doc', 'docx', 'ppt', 'pptx']:
-            # For binary files, return a placeholder message
-            return f"Binary file detected ({file_extension.upper()}). Content analysis not available for this file type."
-        elif file_extension in ['zip', 'rar']:
+        # Text-based files that can be fully analyzed
+        text_extensions = {
+            'txt', 'py', 'js', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'php', 'rb',
+            'scala', 'kt', 'swift', 'r', 'sql', 'html', 'css', 'sh', 'ps1', 'ts',
+            'jsx', 'tsx', 'vue', 'svelte', 'm', 'mm', 'h', 'hpp', 'cc', 'cxx',
+            'pl', 'pm', 'pyw', 'pyi', 'pyx', 'pxd', 'pxi', 'sass', 'scss', 'less',
+            'xml', 'json', 'yaml', 'yml', 'toml', 'ini', 'cfg', 'conf', 'md',
+            'rst', 'tex', 'latex', 'rtf', 'csv', 'tsv', 'log', 'out', 'err'
+        }
+        
+        # Binary document files
+        binary_doc_extensions = {
+            'pdf', 'doc', 'docx', 'ppt', 'pptx', 'odt', 'ods', 'odp'
+        }
+        
+        # Archive files
+        archive_extensions = {
+            'zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz'
+        }
+        
+        if file_extension in text_extensions:
+            # Read text-based files with multiple encoding attempts
+            encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1', 'ascii']
+            for encoding in encodings:
+                try:
+                    with open(file_path, 'r', encoding=encoding) as f:
+                        content = f.read()
+                        # Check if content is readable text
+                        if len(content.strip()) > 0:
+                            return content
+                except (UnicodeDecodeError, UnicodeError):
+                    continue
+            return "Unable to read file content - encoding issues"
+            
+        elif file_extension in binary_doc_extensions:
+            # For binary document files
+            return f"Binary document detected ({file_extension.upper()}). Content analysis not available for this file type."
+            
+        elif file_extension in archive_extensions:
             # For archive files
             return f"Archive file detected ({file_extension.upper()}). Content analysis not available for this file type."
+            
         else:
-            # Try to read as text with different encodings
+            # Try to read as text with different encodings (fallback)
             encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
             for encoding in encodings:
                 try:
                     with open(file_path, 'r', encoding=encoding) as f:
                         content = f.read()
                         # Check if content is readable text
-                        if content.isprintable() or len(content.strip()) > 0:
+                        if len(content.strip()) > 0:
                             return content
                 except:
                     continue
-            return "Unable to read file content - unsupported file type or encoding"
+            return f"Unable to read file content - unsupported file type ({file_extension.upper()}) or encoding"
             
     except Exception as e:
         return f"Error reading file: {str(e)}"
