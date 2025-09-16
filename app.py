@@ -608,9 +608,14 @@ def read_file_content(file_path):
             'rst', 'tex', 'latex', 'rtf', 'csv', 'tsv', 'log', 'out', 'err'
         }
         
-        # Binary document files
-        binary_doc_extensions = {
-            'pdf', 'doc', 'docx', 'ppt', 'pptx', 'odt', 'ods', 'odp'
+        # Document files that can be analyzed with text extraction
+        document_extensions = {
+            'pdf', 'doc', 'docx', 'odt'
+        }
+        
+        # Binary files that cannot be analyzed
+        binary_extensions = {
+            'ppt', 'pptx', 'ods', 'odp'
         }
         
         # Archive files
@@ -632,9 +637,13 @@ def read_file_content(file_path):
                     continue
             return "Unable to read file content - encoding issues"
             
-        elif file_extension in binary_doc_extensions:
-            # For binary document files
-            return f"Binary document detected ({file_extension.upper()}). Content analysis not available for this file type."
+        elif file_extension in document_extensions:
+            # Try to extract text from document files
+            return extract_text_from_document(file_path, file_extension)
+            
+        elif file_extension in binary_extensions:
+            # For binary files that cannot be analyzed
+            return f"Binary file detected ({file_extension.upper()}). Content analysis not available for this file type."
             
         elif file_extension in archive_extensions:
             # For archive files
@@ -656,6 +665,102 @@ def read_file_content(file_path):
             
     except Exception as e:
         return f"Error reading file: {str(e)}"
+
+def extract_text_from_document(file_path, file_extension):
+    """Extract text content from document files (PDF, Word, etc.)"""
+    try:
+        if file_extension == 'pdf':
+            return extract_text_from_pdf(file_path)
+        elif file_extension in ['doc', 'docx']:
+            return extract_text_from_word(file_path)
+        elif file_extension == 'odt':
+            return extract_text_from_odt(file_path)
+        else:
+            return f"Document type {file_extension.upper()} not supported for text extraction"
+    except Exception as e:
+        return f"Error extracting text from {file_extension.upper()} document: {str(e)}"
+
+def extract_text_from_pdf(file_path):
+    """Extract text from PDF files using PyPDF2"""
+    try:
+        import PyPDF2
+        
+        with open(file_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfReader(file)
+            text = ""
+            
+            for page_num in range(len(pdf_reader.pages)):
+                page = pdf_reader.pages[page_num]
+                text += page.extract_text() + "\n"
+            
+            if text.strip():
+                return f"[PDF EXTRACTED TEXT]\n{text.strip()}"
+            else:
+                return "PDF file contains no extractable text (may be image-based or encrypted)"
+                
+    except ImportError:
+        return "PDF text extraction not available - PyPDF2 library not installed"
+    except Exception as e:
+        return f"Error extracting text from PDF: {str(e)}"
+
+def extract_text_from_word(file_path):
+    """Extract text from Word documents using python-docx"""
+    try:
+        from docx import Document
+        
+        doc = Document(file_path)
+        text = ""
+        
+        # Extract text from paragraphs
+        for paragraph in doc.paragraphs:
+            if paragraph.text.strip():
+                text += paragraph.text + "\n"
+        
+        # Extract text from tables
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    if cell.text.strip():
+                        text += cell.text + " "
+                text += "\n"
+        
+        if text.strip():
+            return f"[WORD EXTRACTED TEXT]\n{text.strip()}"
+        else:
+            return "Word document contains no extractable text"
+            
+    except ImportError:
+        return "Word document text extraction not available - python-docx library not installed"
+    except Exception as e:
+        return f"Error extracting text from Word document: {str(e)}"
+
+def extract_text_from_odt(file_path):
+    """Extract text from OpenDocument Text files"""
+    try:
+        import zipfile
+        import xml.etree.ElementTree as ET
+        
+        # ODT files are ZIP archives containing XML
+        with zipfile.ZipFile(file_path, 'r') as odt_file:
+            # Read the main content file
+            content_xml = odt_file.read('content.xml')
+            
+            # Parse XML and extract text
+            root = ET.fromstring(content_xml)
+            text = ""
+            
+            # Extract text from all text nodes
+            for elem in root.iter():
+                if elem.text:
+                    text += elem.text + " "
+            
+            if text.strip():
+                return f"[ODT EXTRACTED TEXT]\n{text.strip()}"
+            else:
+                return "ODT document contains no extractable text"
+                
+    except Exception as e:
+        return f"Error extracting text from ODT document: {str(e)}"
 
 def check_plagiarism_simple_web(content):
     """Simple web-based plagiarism check using search engines"""
