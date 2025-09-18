@@ -1,0 +1,89 @@
+
+<!-- Force Plagiarism Detection Button -->
+<button type="button" class="btn btn-warning btn-sm" onclick="forcePlagiarismCheck()">
+    <i class="fas fa-exclamation-triangle"></i> Force Plagiarism Check
+</button>
+
+<script>
+function forcePlagiarismCheck() {
+    // Show loading
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Force Checking...';
+    button.disabled = true;
+    
+    // Get submission ID from URL or form
+    const submissionId = window.location.pathname.split('/').pop();
+    
+    // Force plagiarism check
+    fetch(`/api/force-plagiarism-check/${submissionId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            force: true,
+            debug: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show results in modal
+            showPlagiarismResults(data.results);
+        } else {
+            alert('Force plagiarism check failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function showPlagiarismResults(results) {
+    // Create modal with detailed results
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Force Plagiarism Check Results</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <strong>Overall Score:</strong> ${results.overall_score}%
+                    </div>
+                    <h6>Individual Method Scores:</h6>
+                    <ul>
+                        <li>TF-IDF: ${results.tfidf_score}%</li>
+                        <li>Semantic: ${results.semantic_score}%</li>
+                        <li>Fingerprint: ${results.fingerprint_score}%</li>
+                        <li>Phrase: ${results.phrase_score}%</li>
+                        <li>Structure: ${results.structure_score}%</li>
+                    </ul>
+                    <h6>Debug Information:</h6>
+                    <pre>${JSON.stringify(results.debug_info, null, 2)}</pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    $(modal).modal('show');
+    
+    // Remove modal when closed
+    $(modal).on('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+    });
+}
+</script>

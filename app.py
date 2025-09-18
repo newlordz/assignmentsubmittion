@@ -48,7 +48,9 @@ if os.path.exists('.env'):
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///assignment_system.db')
+# Use absolute path for Windows compatibility - ignore DATABASE_URL from .env
+db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "instance", "assignment_system.db")
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -958,22 +960,45 @@ def calculate_local_plagiarism_score(content, other_submissions):
         # Method 5: Structure similarity
         structure_score = calculate_structure_similarity(documents)
         
-        # Weighted combination of all methods
-        weights = {
-            'tfidf': 0.3,
-            'semantic': 0.25,
-            'fingerprint': 0.2,
-            'phrase': 0.15,
-            'structure': 0.1
+        # Dynamic weighting based on method reliability
+        scores = {
+            'tfidf': tfidf_score,
+            'semantic': semantic_score,
+            'fingerprint': fingerprint_score,
+            'phrase': phrase_score,
+            'structure': structure_score
         }
         
+        # If TF-IDF fails (returns 0), redistribute weights to other methods
+        if tfidf_score < 1.0:  # TF-IDF failed or very low
+            print(f"⚠️ TF-IDF failed ({tfidf_score}%), using other methods")
+            weights = {
+                'tfidf': 0.0,
+                'semantic': 0.35,
+                'fingerprint': 0.3,
+                'phrase': 0.2,
+                'structure': 0.15
+            }
+        else:
+            weights = {
+                'tfidf': 0.3,
+                'semantic': 0.25,
+                'fingerprint': 0.2,
+                'phrase': 0.15,
+                'structure': 0.1
+            }
+        
         final_score = (
-            tfidf_score * weights['tfidf'] +
-            semantic_score * weights['semantic'] +
-            fingerprint_score * weights['fingerprint'] +
-            phrase_score * weights['phrase'] +
-            structure_score * weights['structure']
+            scores['tfidf'] * weights['tfidf'] +
+            scores['semantic'] * weights['semantic'] +
+            scores['fingerprint'] * weights['fingerprint'] +
+            scores['phrase'] * weights['phrase'] +
+            scores['structure'] * weights['structure']
         )
+        
+        # Debug output
+        print(f"🔍 Individual scores: TF-IDF={tfidf_score:.1f}%, Semantic={semantic_score:.1f}%, Fingerprint={fingerprint_score:.1f}%, Phrase={phrase_score:.1f}%, Structure={structure_score:.1f}%")
+        print(f"🔍 Weights: TF-IDF={weights['tfidf']}, Semantic={weights['semantic']}, Fingerprint={weights['fingerprint']}, Phrase={weights['phrase']}, Structure={weights['structure']}")
         
         print(f"🔍 Local plagiarism analysis completed - Score: {final_score}%")
         return round(final_score, 2)
@@ -989,19 +1014,29 @@ def calculate_tfidf_similarity(documents):
         from sklearn.metrics.pairwise import cosine_similarity
         import numpy as np
         
-        # Create enhanced TF-IDF vectorizer
+        # Filter out empty documents
+        valid_docs = [doc for doc in documents if doc and len(doc.strip()) > 10]
+        if len(valid_docs) < 2:
+            return 0.0
+        
+        # Create enhanced TF-IDF vectorizer with more lenient parameters
         vectorizer = TfidfVectorizer(
             stop_words='english',
-            ngram_range=(1, 4),  # Use 1-4 word combinations
-            max_features=2000,
+            ngram_range=(1, 3),  # Use 1-3 word combinations (more lenient)
+            max_features=1000,   # Reduced for better performance
             lowercase=True,
             strip_accents='unicode',
-            min_df=1,
-            max_df=0.95
+            min_df=1,           # Allow single occurrence
+            max_df=1.0          # Allow all terms
         )
         
         # Fit and transform documents
-        tfidf_matrix = vectorizer.fit_transform(documents)
+        tfidf_matrix = vectorizer.fit_transform(valid_docs)
+        
+        # Check if we have valid features
+        if tfidf_matrix.shape[1] == 0:
+            print("⚠️ TF-IDF: No valid features found, falling back to simple similarity")
+            return calculate_simple_similarity(valid_docs[0], valid_docs[1:])
         
         # Calculate cosine similarity between first document and all others
         similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:])
@@ -1011,10 +1046,11 @@ def calculate_tfidf_similarity(documents):
         
         return max_similarity * 100
         
-    except ImportError:
-        return calculate_simple_similarity(documents[0], documents[1:])
     except Exception as e:
-        print(f"TF-IDF calculation error: {e}")
+        print(f"⚠️ TF-IDF calculation error: {e}")
+        # Fallback to simple similarity
+        if len(documents) >= 2:
+            return calculate_simple_similarity(documents[0], documents[1:])
         return 0.0
 
 def calculate_semantic_similarity(documents):
@@ -2274,31 +2310,12 @@ def edit_assignment(assignment_id):
 @app.route('/api/plagiarism-check/<int:submission_id>')
 @login_required
 def plagiarism_check(submission_id):
+    """Legacy API route - now uses same logic as Force API for consistency"""
     try:
+        print(f"🔍 Old API called for submission {submission_id}")
+        
+        # Get submission
         submission = Submission.query.get_or_404(submission_id)
-        
-        # Use stored content or read from file (with fallback for missing column)
-        try:
-            content = submission.content or read_file_content(submission.file_path)
-        except AttributeError:
-            # Fallback if content column doesn't exist
-            content = read_file_content(submission.file_path)
-        
-        # Check if content is readable for plagiarism detection
-        if not content or "Binary file detected" in content or "Archive file detected" in content or "Unable to read" in content:
-            submission.plagiarism_score = 0.0
-            submission.plagiarism_report = f"Plagiarism check skipped: {content or 'No content available'}"
-            db.session.commit()
-            
-            return jsonify({
-                'plagiarism_score': 0.0,
-                'report': submission.plagiarism_report,
-                'status': 'skipped',
-                'reason': content or 'No content available'
-            })
-        
-        # Use comprehensive local plagiarism detection
-        print("Running comprehensive local plagiarism detection...")
         
         # Get other submissions for comparison
         other_submissions = Submission.query.filter(
@@ -2306,23 +2323,34 @@ def plagiarism_check(submission_id):
             Submission.id != submission_id
         ).all()
         
-        # Use stored content from other submissions
-        other_contents = []
-        for other_sub in other_submissions:
-            try:
-                other_content = other_sub.content or read_file_content(other_sub.file_path)
-            except AttributeError:
-                # Fallback if content column doesn't exist
-                other_content = read_file_content(other_sub.file_path)
-            
-            if other_content and not any(msg in other_content for msg in ["Binary file detected", "Archive file detected", "Unable to read"]):
-                other_contents.append(other_content)
+        if not other_submissions:
+            return jsonify({
+                'plagiarism_score': 0.0,
+                'report': 'No other submissions to compare against',
+                'status': 'no_comparison'
+            })
         
-        # Calculate plagiarism score
-        plagiarism_score = calculate_plagiarism_score(content, other_contents)
+        # Read submission content
+        content = read_file_content(submission.file_path)
+        if not content:
+            return jsonify({
+                'plagiarism_score': 0.0,
+                'report': 'Could not read submission content',
+                'status': 'error'
+            })
         
-        # Generate detailed plagiarism report
-        plagiarism_report = generate_detailed_plagiarism_report(content, other_contents, plagiarism_score)
+        # Create mock submissions for the working plagiarism detection
+        class MockSubmission:
+            def __init__(self, content):
+                self.content = content
+        
+        mock_submissions = [MockSubmission(read_file_content(sub.file_path)) for sub in other_submissions]
+        
+        # Calculate plagiarism score using the working method
+        plagiarism_score = calculate_local_plagiarism_score(content, mock_submissions)
+        
+        # Generate simple report
+        plagiarism_report = f"Plagiarism Score: {plagiarism_score:.2f}% - Local analysis completed"
         
         # Update submission record
         submission.plagiarism_score = plagiarism_score
@@ -2336,6 +2364,7 @@ def plagiarism_check(submission_id):
         })
         
     except Exception as e:
+        print(f"❌ Old API Error: {e}")
         return jsonify({
             'error': f'Plagiarism check failed: {str(e)}',
             'plagiarism_score': 0.0,
@@ -2974,6 +3003,74 @@ def admin_assignment_report():
     except Exception as e:
         flash(f'Report generation failed: {str(e)}', 'error')
         return redirect(url_for('admin_analytics'))
+
+@app.route('/api/force-plagiarism-check/<int:submission_id>', methods=['POST'])
+def force_plagiarism_check(submission_id):
+    """Force plagiarism check with detailed debugging"""
+    try:
+        # Get submission
+        submission = Submission.query.get_or_404(submission_id)
+        
+        # Get other submissions for comparison
+        other_submissions = Submission.query.filter(
+            Submission.assignment_id == submission.assignment_id,
+            Submission.id != submission_id
+        ).all()
+        
+        if not other_submissions:
+            return jsonify({
+                'success': False,
+                'error': 'No other submissions to compare against'
+            })
+        
+        # Read submission content
+        content = read_file_content(submission.file_path)
+        if not content:
+            return jsonify({
+                'success': False,
+                'error': 'Could not read submission content'
+            })
+        
+        # Create mock submissions for testing
+        class MockSubmission:
+            def __init__(self, content):
+                self.content = content
+        
+        mock_submissions = [MockSubmission(read_file_content(sub.file_path)) for sub in other_submissions]
+        
+        # Calculate plagiarism score
+        score = calculate_local_plagiarism_score(content, mock_submissions)
+        
+        # Generate detailed plagiarism report
+        plagiarism_report = f"Plagiarism Score: {score:.2f}% - Local analysis completed using comprehensive multi-method detection"
+        
+        # Save results to database
+        submission.plagiarism_score = score
+        submission.plagiarism_report = plagiarism_report
+        db.session.commit()
+        
+        # Get detailed debug information
+        debug_info = {
+            'submission_id': submission_id,
+            'content_length': len(content),
+            'other_submissions_count': len(other_submissions),
+            'file_path': submission.file_path,
+            'file_type': submission.file_path.split('.')[-1] if submission.file_path else 'unknown'
+        }
+        
+        return jsonify({
+            'success': True,
+            'results': {
+                'overall_score': score,
+                'debug_info': debug_info
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 # Initialize database when app is created (after all models and routes are defined)
 initialize_database()

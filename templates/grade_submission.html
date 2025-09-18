@@ -144,6 +144,83 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+.plagiarism-results {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.plagiarism-score {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.plagiarism-score.high {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.plagiarism-score.medium {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.plagiarism-score.low {
+    background: #e8f5e8;
+    color: #388e3c;
+}
+
+.plagiarism-report h5 {
+    color: #333;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 5px;
+}
+
+.plagiarism-report ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.plagiarism-report li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.alert {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid;
+}
+
+.alert-danger {
+    background: #ffebee;
+    border-left-color: #d32f2f;
+    color: #d32f2f;
+}
+
+.alert-warning {
+    background: #fff3e0;
+    border-left-color: #f57c00;
+    color: #f57c00;
+}
+
+.alert-success {
+    background: #e8f5e8;
+    border-left-color: #388e3c;
+    color: #388e3c;
+}
+
+.plagiarism-actions {
+    text-align: center;
+    margin-top: 20px;
+}
+</style>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const marksInput = document.getElementById('marks');
@@ -191,34 +268,67 @@
         modal.style.display = 'flex';
         content.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i><p>Checking for plagiarism...</p></div>';
         
-        // Simulate API call
-        fetch(`/api/plagiarism-check/${submissionId}`)
-            .then(response => response.json())
-            .then(data => {
+        // Use the working force plagiarism API
+        fetch(`/api/force-plagiarism-check/${submissionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                force: true,
+                debug: true
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const results = data.results;
+                const score = results.overall_score;
+                const debugInfo = results.debug_info;
+                
                 content.innerHTML = `
                     <div class="plagiarism-results">
-                        <div class="plagiarism-score ${data.plagiarism_score > 30 ? 'high' : data.plagiarism_score > 15 ? 'medium' : 'low'}">
-                            <h4>Plagiarism Score: ${data.plagiarism_score.toFixed(1)}%</h4>
+                        <div class="plagiarism-score ${score > 70 ? 'high' : score > 30 ? 'medium' : 'low'}">
+                            <h4 style="margin: 0; font-size: 24px;">Plagiarism Score: ${score.toFixed(2)}%</h4>
                         </div>
                         <div class="plagiarism-report">
-                            <p>${data.report}</p>
+                            <h5>Analysis Report</h5>
+                            <ul>
+                                <li><strong>Content Length:</strong> ${debugInfo.content_length} characters</li>
+                                <li><strong>File Type:</strong> ${debugInfo.file_type.toUpperCase()}</li>
+                                <li><strong>Other Submissions:</strong> ${debugInfo.other_submissions_count}</li>
+                                <li><strong>Submission ID:</strong> ${debugInfo.submission_id}</li>
+                            </ul>
+                            <div class="alert ${score > 70 ? 'alert-danger' : score > 30 ? 'alert-warning' : 'alert-success'}">
+                                <strong>Status:</strong> ${score > 70 ? '🚨 HIGH PLAGIARISM DETECTED!' : score > 30 ? '⚠️ MODERATE SIMILARITY' : '✅ LOW SIMILARITY - Content appears original'}
+                            </div>
                         </div>
                         <div class="plagiarism-actions">
                             <button class="btn btn-outline" onclick="closeModal('plagiarismModal')">Close</button>
                         </div>
                     </div>
                 `;
-            })
-            .catch(error => {
+            } else {
                 content.innerHTML = `
                     <div class="error">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <p>Error checking plagiarism. Please try again.</p>
+                        <p>Plagiarism check failed: ${data.error}</p>
                         <button class="btn btn-outline" onclick="closeModal('plagiarismModal')">Close</button>
                     </div>
                 `;
-            });
+            }
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Error: ${error.message}</p>
+                    <button class="btn btn-outline" onclick="closeModal('plagiarismModal')">Close</button>
+                </div>
+            `;
+        });
     }
+    
     
     function closeModal(modalId) {
         document.getElementById(modalId).style.display = 'none';
